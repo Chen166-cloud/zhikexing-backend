@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.chy.ai.mapper.SpringAiChatMemoryMapper">
+
+    <!-- 根据会话id删除spring_ai_chat_memory表中的记录 -->
+    <delete id="deleteByConversationId">
+        DELETE FROM spring_ai_chat_memory
+        WHERE conversation_id = #{conversationId}
+    </delete>
+
+</mapper>

@@ -19,4 +19,12 @@ public interface IiipChatRecordMapper extends BaseMapper<IiipChatRecord> {
 
     @Select("SELECT id FROM iiip_chat_record WHERE type = #{type} and user_id = #{userId} ORDER BY create_time DESC")
     List<String> findConversationIds(@Param("type") String type, @Param("userId") Long userId);
+
+    /**
+     * 根据会话id删除会话记录（iiip_chat_record表中id即为conversation_id）
+     *
+     * @param conversationId 会话id
+     * @return 删除的记录数
+     */
+    int deleteByConversationId(@Param("conversationId") String conversationId);
 }

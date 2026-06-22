@@ -1,0 +1,43 @@
+spring:
+  application:
+    name: intelligent-integrated-interaction-platform
+
+  ai:
+    model:
+      chat: openai
+
+    chat:
+      memory:
+        repository:
+          jdbc:
+            initialize-schema: never
+    openai:
+      # 阿里云百炼兼容 OpenAI 接口
+      # Spring AI 默认会追加 /v1/chat/completions，所以这里保持到 compatible-mode 即可
+      base-url: https://dashscope.aliyuncs.com/compatible-mode
+      api-key: ${API-KEY}
+
+      chat:
+        options:
+          model: qwen3.7-max
+
+      embedding:
+        options:
+          model: text-embedding-v4
+          dimensions: 1024
+
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://localhost:3306/spring-ai-demo?serverTimezone=Asia/Shanghai&useUnicode=true&characterEncoding=utf-8&allowPublicKeyRetrieval=true&useSSL=false
+    username: root
+    password: 1234
+
+  servlet:
+    multipart:
+      max-file-size: 30MB
+      max-request-size: 40MB
+
+logging:
+  level:
+    org.springframework.ai: debug
+    com.chy.ai: debug

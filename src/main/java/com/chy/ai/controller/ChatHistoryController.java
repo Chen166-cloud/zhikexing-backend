@@ -1,9 +1,11 @@
 package com.chy.ai.controller;
 
 import com.chy.ai.entity.vo.MessageVO;
+import com.chy.ai.entity.vo.Result;
 import com.chy.ai.service.IIiipChatRecordService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.ai.chat.memory.ChatMemoryRepository;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -27,6 +29,12 @@ public class ChatHistoryController {
     @GetMapping("/{type}/{chatId}")
     public List<MessageVO> getChatHistory(@PathVariable("type") String type, @PathVariable("chatId") String chatId) {
         return chatMemoryRepository.findByConversationId(chatId).stream().map(MessageVO::new).toList();
+    }
+
+    @DeleteMapping("/{type}/{chatId}")
+    public Result deleteChatHistory(@PathVariable("type") String type, @PathVariable("chatId") String chatId) {
+        recordService.deleteByConversationId(chatId);
+        return Result.ok();
     }
 
 }

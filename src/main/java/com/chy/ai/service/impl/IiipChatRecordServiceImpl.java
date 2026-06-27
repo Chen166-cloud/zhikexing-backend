@@ -40,8 +40,12 @@ public class IiipChatRecordServiceImpl extends ServiceImpl<IiipChatRecordMapper,
         record.setId(conversionId);
         // TODO userId暂时写死, 后续会从session中获取
         record.setUserId(1L);
-        // TODO 会话标题暂时用会话id, 后续可以根据会话内容生成
-        record.setTitle(conversionId);
+        // 会话标题：取第一条USER消息内容的前6个字符，若为空则使用会话id
+        String earliestUserContent = springAiChatMemoryMapper.findEarliestUserContentByConversationId(conversionId);
+        String title = (earliestUserContent != null && !earliestUserContent.isEmpty())
+                ? earliestUserContent.substring(0, Math.min(6, earliestUserContent.length()))
+                : conversionId;
+        record.setTitle(title);
         record.setCreateTime(LocalDateTime.now());
         save(record);
     }
@@ -50,6 +54,34 @@ public class IiipChatRecordServiceImpl extends ServiceImpl<IiipChatRecordMapper,
     public List<String> findConversationIds(String type) {
         // TODO userId暂时写死, 后续会从session中获取
         return this.getBaseMapper().findConversationIds(type, 1L);
+    }
+
+    @Override
+    public void updateTitle(String conversationId) {
+        // 会话标题：取第一条USER消息内容的前6个字符，若为空则使用会话id
+        String earliestUserContent = springAiChatMemoryMapper.findEarliestUserContentByConversationId(conversationId);
+        String title = (earliestUserContent != null && !earliestUserContent.isEmpty())
+                ? earliestUserContent.substring(0, Math.min(6, earliestUserContent.length()))
+                : conversationId;
+        this.lambdaUpdate()
+                .eq(IiipChatRecord::getId, conversationId)
+                .set(IiipChatRecord::getTitle, title)
+                .update();
+    }
+
+    @Override
+    public List<IiipChatRecord> updateAndListTitles(String type) {
+        // 1. 更新该类型下所有会话的标题
+        List<String> conversationIds = this.getBaseMapper().findConversationIds(type, 1L);
+        for (String conversationId : conversationIds) {
+            updateTitle(conversationId);
+        }
+        // 2. 返回更新后的会话记录列表
+        return this.lambdaQuery()
+                .eq(IiipChatRecord::getType, type)
+                .eq(IiipChatRecord::getUserId, 1L)
+                .orderByDesc(IiipChatRecord::getCreateTime)
+                .list();
     }
 
     @Override

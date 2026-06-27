@@ -20,4 +20,12 @@ public interface SpringAiChatMemoryMapper extends BaseMapper<SpringAiChatMemory>
      * @return 删除的记录数
      */
     int deleteByConversationId(@Param("conversationId") String conversationId);
+
+    /**
+     * 根据会话id查询最早的USER消息内容，用于生成会话标题
+     *
+     * @param conversationId 会话id
+     * @return 最早的USER消息内容，若无结果则返回null
+     */
+    String findEarliestUserContentByConversationId(@Param("conversationId") String conversationId);
 }

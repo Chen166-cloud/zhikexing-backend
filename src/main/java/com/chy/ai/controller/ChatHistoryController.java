@@ -1,5 +1,6 @@
 package com.chy.ai.controller;
 
+import com.chy.ai.entity.po.IiipChatRecord;
 import com.chy.ai.entity.vo.MessageVO;
 import com.chy.ai.entity.vo.Result;
 import com.chy.ai.service.IIiipChatRecordService;
@@ -35,6 +36,11 @@ public class ChatHistoryController {
     public Result deleteChatHistory(@PathVariable("type") String type, @PathVariable("chatId") String chatId) {
         recordService.deleteByConversationId(chatId);
         return Result.ok();
+    }
+
+    @GetMapping("/{type}/titles")
+    public List<IiipChatRecord> listTitles(@PathVariable("type") String type) {
+        return recordService.updateAndListTitles(type);
     }
 
 }

@@ -18,4 +18,19 @@ public interface IIiipChatRecordService extends IService<IiipChatRecord> {
      * @param conversationId 会话id
      */
     void deleteByConversationId(String conversationId);
+
+    /**
+     * 更新会话标题，逻辑与saveRecord中的标题生成一致
+     *
+     * @param conversationId 会话id
+     */
+    void updateTitle(String conversationId);
+
+    /**
+     * 更新指定类型下所有会话的标题，并返回更新后的会话标题列表
+     *
+     * @param type 会话类型
+     * @return 更新后的会话记录列表
+     */
+    List<IiipChatRecord> updateAndListTitles(String type);
 }

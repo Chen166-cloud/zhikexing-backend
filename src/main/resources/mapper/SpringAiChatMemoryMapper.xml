@@ -8,4 +8,12 @@
         WHERE conversation_id = #{conversationId}
     </delete>
 
+    <!-- 根据会话id查询最早的USER消息内容，用于生成会话标题 -->
+    <select id="findEarliestUserContentByConversationId" resultType="java.lang.String">
+        SELECT content FROM spring_ai_chat_memory
+        WHERE conversation_id = #{conversationId} AND type = 'USER'
+        ORDER BY timestamp ASC
+        LIMIT 1
+    </select>
+
 </mapper>

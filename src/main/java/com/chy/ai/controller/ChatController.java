@@ -29,7 +29,7 @@ public class ChatController {
 
     // 请求方式和路径不要改动，将来要与前端联调
     @RequestMapping(value = "/chat", produces = "text/html;charset=UTF-8")
-    public Flux<String> chat(@RequestParam(defaultValue = "你好") String prompt,
+    public Flux<String> chat(@RequestParam String prompt,
                              @RequestParam("chatId") String chatId) {
 
         // 保存会话记录

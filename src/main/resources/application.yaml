@@ -4,13 +4,19 @@ spring:
 
   ai:
     model:
-      chat: openai
+      chat: deepseek
 
     chat:
       memory:
         repository:
           jdbc:
             initialize-schema: never
+    deepseek:
+      api-key: ${DEEPSEEK_API_KEY}
+      chat:
+        options:
+          model: deepseek-v4-pro
+
     openai:
       # 阿里云百炼兼容 OpenAI 接口
       # Spring AI 默认会追加 /v1/chat/completions，所以这里保持到 compatible-mode 即可
@@ -26,11 +32,24 @@ spring:
           model: text-embedding-v4
           dimensions: 1024
 
+    vectorstore:
+      type: custom
+      redis:
+        initialize-schema: true
+        index-name: iiip-pdf-index
+        prefix: "iiip:pdf:"
+
   datasource:
     driver-class-name: com.mysql.cj.jdbc.Driver
     url: jdbc:mysql://localhost:3306/spring-ai-demo?serverTimezone=Asia/Shanghai&useUnicode=true&characterEncoding=utf-8&allowPublicKeyRetrieval=true&useSSL=false
     username: root
     password: 1234
+
+  data:
+    redis:
+      host: localhost
+      port: 6379
+      client-type: jedis
 
   servlet:
     multipart:

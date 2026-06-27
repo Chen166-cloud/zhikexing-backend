@@ -11,12 +11,18 @@ import org.springframework.ai.chat.memory.InMemoryChatMemoryRepository;
 import org.springframework.ai.chat.memory.MessageWindowChatMemory;
 import org.springframework.ai.chat.memory.repository.jdbc.JdbcChatMemoryRepository;
 import org.springframework.ai.chat.model.ChatModel;
-import org.springframework.ai.openai.OpenAiEmbeddingModel;
+import org.springframework.ai.embedding.EmbeddingModel;
 import org.springframework.ai.vectorstore.SearchRequest;
-import org.springframework.ai.vectorstore.SimpleVectorStore;
 import org.springframework.ai.vectorstore.VectorStore;
+import org.springframework.ai.vectorstore.redis.RedisVectorStore;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.data.redis.connection.jedis.JedisConnectionFactory;
+import redis.clients.jedis.DefaultJedisClientConfig;
+import redis.clients.jedis.HostAndPort;
+import redis.clients.jedis.JedisClientConfig;
+import redis.clients.jedis.JedisPooled;
 
 import static com.chy.ai.contants.SystemConstants.SERVICE_SYSTEM_PROMPT;
 
@@ -79,8 +85,35 @@ public class IiipConfiguration {
     }
 
     @Bean
-    public VectorStore vectorStore(OpenAiEmbeddingModel embeddingModel) {
-        return SimpleVectorStore.builder(embeddingModel).build();
+    public VectorStore vectorStore(
+            EmbeddingModel embeddingModel,
+            JedisConnectionFactory jedisConnectionFactory,
+            @Value("${spring.ai.vectorstore.redis.index-name:iiip-pdf-index}") String indexName,
+            @Value("${spring.ai.vectorstore.redis.prefix:iiip:pdf:}") String prefix,
+            @Value("${spring.ai.vectorstore.redis.initialize-schema:true}") boolean initializeSchema) {
+        return RedisVectorStore
+                .builder(jedisPooled(jedisConnectionFactory), embeddingModel)
+                .indexName(indexName)
+                .prefix(prefix)
+                .initializeSchema(initializeSchema)
+                .metadataFields(
+                        RedisVectorStore.MetadataField.tag("chat_id"),
+                        RedisVectorStore.MetadataField.tag("file_name")
+                )
+                .build();
+    }
+
+    private JedisPooled jedisPooled(JedisConnectionFactory jedisConnectionFactory) {
+        JedisClientConfig clientConfig = DefaultJedisClientConfig.builder()
+                .ssl(jedisConnectionFactory.isUseSsl())
+                .clientName(jedisConnectionFactory.getClientName())
+                .timeoutMillis(jedisConnectionFactory.getTimeout())
+                .password(jedisConnectionFactory.getPassword())
+                .build();
+        return new JedisPooled(
+                new HostAndPort(jedisConnectionFactory.getHostName(), jedisConnectionFactory.getPort()),
+                clientConfig
+        );
     }
 
     @Bean

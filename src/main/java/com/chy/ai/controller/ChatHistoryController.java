@@ -9,10 +9,13 @@ import org.springframework.ai.chat.memory.ChatMemoryRepository;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/ai/history")
@@ -25,6 +28,13 @@ public class ChatHistoryController {
     @RequestMapping("/{type}")
     public List<String> list(@PathVariable("type") String type) {
         return recordService.findConversationIds(type);
+    }
+
+    @PostMapping("/{type}")
+    public Result createChat(@PathVariable("type") String type, @RequestBody Map<String, String> body) {
+        String chatId = body.get("id");
+        recordService.saveRecord(type, chatId);
+        return Result.ok();
     }
 
     @GetMapping("/{type}/{chatId}")

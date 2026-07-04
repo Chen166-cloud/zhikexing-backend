@@ -1,8 +1,11 @@
 package com.chy.ai.service.impl;
 
+import com.chy.ai.entity.po.IiipPdfFile;
+import com.chy.ai.entity.vo.PdfFileDownload;
+import com.chy.ai.service.IIiipPdfFileService;
 import com.chy.ai.service.IFileService;
-import jakarta.annotation.PostConstruct;
-import jakarta.annotation.PreDestroy;
+import com.chy.ai.util.AliyunOSSOperator;
+import com.chy.ai.util.OssUploadResult;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.document.Document;
@@ -10,26 +13,28 @@ import org.springframework.ai.reader.ExtractedTextFormatter;
 import org.springframework.ai.reader.pdf.PagePdfDocumentReader;
 import org.springframework.ai.reader.pdf.config.PdfDocumentReaderConfig;
 import org.springframework.ai.vectorstore.VectorStore;
-import org.springframework.core.io.FileSystemResource;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.io.ByteArrayResource;
 import org.springframework.core.io.Resource;
 import org.springframework.stereotype.Service;
+import org.springframework.util.StringUtils;
+import org.springframework.web.multipart.MultipartFile;
 
-import java.io.*;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Properties;
 
 @Slf4j
 @Service
 @RequiredArgsConstructor
 public class FileServiceImpl implements IFileService {
 
+    private static final int VECTOR_STATUS_NOT_STORED = 0;
+    private static final int VECTOR_STATUS_STORED = 1;
+    private static final int VECTOR_STATUS_FAILED = 2;
     private static final int MIN_PARAGRAPH_CHARS = 120;
     private static final int MAX_PARAGRAPH_CHARS = 800;
     private static final int LONG_PARAGRAPH_OVERLAP_CHARS = 100;
@@ -38,72 +43,94 @@ public class FileServiceImpl implements IFileService {
 
     private final VectorStore vectorStore;
 
-    // 会话id 与 文件名的对应关系，方便查询会话历史时重新加载文件
-    private final Properties chatFiles = new Properties();
+    private final AliyunOSSOperator aliyunOSSOperator;
+
+    private final IIiipPdfFileService pdfFileService;
+
+    @Value("${spring.ai.vectorstore.redis.index-name:iiip-pdf-index}")
+    private String vectorIndexName;
 
     @Override
-    public boolean save(String chatId, Resource resource) {
-        // 1.保存到本地磁盘
-        String filename = resource.getFilename();
-        File target = new File(Objects.requireNonNull(filename));
-        if (!target.exists()) {
-            try {
-                Files.copy(resource.getInputStream(), target.toPath());
-            } catch (IOException e) {
-                log.error("Failed to save PDF resource.", e);
-                return false;
-            }
+    public boolean save(String chatId, MultipartFile file) {
+        if (file == null || file.isEmpty()) {
+            return false;
         }
-        // 2.保存映射关系
-        chatFiles.put(chatId, filename);
-        // 3.写入向量库
-        writeToVectorStore(resource, chatId);
-        return true;
-    }
 
-    @Override
-    public Resource getFile(String chatId) {
-        return new FileSystemResource(chatFiles.getProperty(chatId));
-    }
-
-    @PostConstruct
-    private void init() {
-        FileSystemResource pdfResource = new FileSystemResource("chat-pdf.properties");
-        if (pdfResource.exists()) {
-            try {
-                chatFiles.load(new BufferedReader(new InputStreamReader(pdfResource.getInputStream(), StandardCharsets.UTF_8)));
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            }
-        }
-    }
-
-    @PreDestroy
-    private void persistent() {
+        IiipPdfFile pdfFile = null;
         try {
-            chatFiles.store(new FileWriter("chat-pdf.properties"), LocalDateTime.now().toString());
-        } catch (IOException e) {
-            throw new RuntimeException(e);
+            String originalFilename = StringUtils.cleanPath(
+                    Objects.requireNonNullElse(file.getOriginalFilename(), "document.pdf")
+            );
+            String contentType = StringUtils.hasText(file.getContentType()) ? file.getContentType() : "application/pdf";
+            byte[] content = file.getBytes();
+            OssUploadResult uploadResult = aliyunOSSOperator.upload(content, originalFilename, contentType, chatId);
+
+            LocalDateTime now = LocalDateTime.now();
+            pdfFile = new IiipPdfFile()
+                    .setChatId(chatId)
+                    .setUserId(1L)
+                    .setOriginalFilename(originalFilename)
+                    .setOssBucket(uploadResult.bucketName())
+                    .setOssKey(uploadResult.ossKey())
+                    .setFileSize((long) content.length)
+                    .setContentType(contentType)
+                    .setVectorIndexName(vectorIndexName)
+                    .setVectorStatus(VECTOR_STATUS_NOT_STORED)
+                    .setCreateTime(now)
+                    .setUpdateTime(now);
+            pdfFileService.saveOrReplace(pdfFile);
+
+            boolean vectorStored = writeToVectorStore(file.getResource(), chatId);
+            pdfFileService.updateVectorStatus(pdfFile.getId(), vectorStored ? VECTOR_STATUS_STORED : VECTOR_STATUS_FAILED);
+            return vectorStored;
+        } catch (Exception e) {
+            if (pdfFile != null) {
+                pdfFileService.updateVectorStatus(pdfFile.getId(), VECTOR_STATUS_FAILED);
+            }
+            log.error("Failed to upload PDF to OSS or write vector store.", e);
+            return false;
         }
     }
 
-    private void writeToVectorStore(Resource resource, String chatId) {
-        // 1.创建PDF的读取器
+    @Override
+    public PdfFileDownload getFile(String chatId) {
+        IiipPdfFile pdfFile = pdfFileService.getByChatId(chatId);
+        if (pdfFile == null) {
+            return null;
+        }
+        try {
+            byte[] content = aliyunOSSOperator.download(pdfFile.getOssKey());
+            Resource resource = new ByteArrayResource(content) {
+                @Override
+                public String getFilename() {
+                    return pdfFile.getOriginalFilename();
+                }
+            };
+            String contentType = StringUtils.hasText(pdfFile.getContentType())
+                    ? pdfFile.getContentType()
+                    : "application/pdf";
+            return new PdfFileDownload(resource, pdfFile.getOriginalFilename(), contentType, content.length);
+        } catch (Exception e) {
+            log.error("Failed to download PDF from OSS. chatId={}", chatId, e);
+            return null;
+        }
+    }
+
+    private boolean writeToVectorStore(Resource resource, String chatId) {
         PagePdfDocumentReader reader = new PagePdfDocumentReader(
-                resource, // 文件源
+                resource,
                 PdfDocumentReaderConfig.builder()
                         .withPageExtractedTextFormatter(ExtractedTextFormatter.defaults())
-                        .withPagesPerDocument(1) // 每1页PDF作为一个Document
+                        .withPagesPerDocument(1)
                         .build()
         );
-        // 2.按页读取PDF，再按自然段落切分。短段落合并，长段落二次切分。
         List<Document> documents = splitByParagraphs(reader.read(), chatId);
         if (documents.isEmpty()) {
             log.warn("No text segments extracted from PDF resource: {}", resource.getFilename());
-            return;
+            return false;
         }
-        // 3.写入向量库
         vectorStore.add(documents);
+        return true;
     }
 
     private List<Document> splitByParagraphs(List<Document> pageDocuments, String chatId) {

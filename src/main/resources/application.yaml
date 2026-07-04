@@ -56,6 +56,13 @@ spring:
       max-file-size: 30MB
       max-request-size: 40MB
 
+# Aliyun OSS. Credentials are read from OSS_ACCESS_KEY_ID and OSS_ACCESS_KEY_SECRET.
+aliyun:
+  oss:
+    endpoint: https://oss-cn-shanghai.aliyuncs.com
+    bucketName: chy-java-01
+    region: cn-shanghai
+
 logging:
   level:
     org.springframework.ai: debug

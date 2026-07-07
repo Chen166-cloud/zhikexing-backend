@@ -29,10 +29,11 @@ public class CustomerServiceController {
     public Flux<String> service(String prompt, String chatId) {
         // 1.保存会话id
         recordService.saveRecord("service", chatId);
+        String conversationId = recordService.resolveConversationId("service", chatId);
         // 2.请求模型
         return serviceChatClient.prompt()
                 .user(prompt)
-                .advisors(a -> a.param(ChatMemory.CONVERSATION_ID, chatId))
+                .advisors(a -> a.param(ChatMemory.CONVERSATION_ID, conversationId))
                 .stream()
                 .content();
     }

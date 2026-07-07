@@ -26,5 +26,5 @@ public interface IiipChatRecordMapper extends BaseMapper<IiipChatRecord> {
      * @param conversationId 会话id
      * @return 删除的记录数
      */
-    int deleteByConversationId(@Param("conversationId") String conversationId);
+    int deleteByConversationId(@Param("conversationId") String conversationId, @Param("userId") Long userId);
 }

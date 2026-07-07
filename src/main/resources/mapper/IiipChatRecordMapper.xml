@@ -6,6 +6,7 @@
     <delete id="deleteByConversationId">
         DELETE FROM iiip_chat_record
         WHERE id = #{conversationId}
+          AND user_id = #{userId}
     </delete>
 
 </mapper>

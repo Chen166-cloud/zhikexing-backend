@@ -39,7 +39,8 @@ public class ChatHistoryController {
 
     @GetMapping("/{type}/{chatId}")
     public List<MessageVO> getChatHistory(@PathVariable("type") String type, @PathVariable("chatId") String chatId) {
-        return chatMemoryRepository.findByConversationId(chatId).stream().map(MessageVO::new).toList();
+        String conversationId = recordService.resolveConversationId(type, chatId);
+        return chatMemoryRepository.findByConversationId(conversationId).stream().map(MessageVO::new).toList();
     }
 
     @DeleteMapping("/{type}/{chatId}")

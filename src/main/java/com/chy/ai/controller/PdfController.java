@@ -76,10 +76,11 @@ public class PdfController {
     @RequestMapping(value = "/chat", produces = "text/html;charset=UTF-8")
     public Flux<String> chat(String prompt, String chatId) {
         recordService.saveRecord("pdf", chatId);
+        String conversationId = recordService.resolveConversationId("pdf", chatId);
         return pdfChatClient
                 .prompt(prompt)
-                .advisors(a -> a.param(ChatMemory.CONVERSATION_ID, chatId))
-                .advisors(a -> a.param(QuestionAnswerAdvisor.FILTER_EXPRESSION, "chat_id == '" + chatId + "'"))
+                .advisors(a -> a.param(ChatMemory.CONVERSATION_ID, conversationId))
+                .advisors(a -> a.param(QuestionAnswerAdvisor.FILTER_EXPRESSION, "chat_id == '" + conversationId + "'"))
                 .stream()
                 .content();
     }

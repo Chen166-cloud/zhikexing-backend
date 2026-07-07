@@ -6,6 +6,8 @@ import com.chy.ai.service.IIiipPdfFileService;
 import com.chy.ai.service.IFileService;
 import com.chy.ai.util.AliyunOSSOperator;
 import com.chy.ai.util.OssUploadResult;
+import com.chy.ai.util.UserHolder;
+import com.chy.ai.entity.vo.UserDTO;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.document.Document;
@@ -32,6 +34,7 @@ import java.util.Objects;
 @RequiredArgsConstructor
 public class FileServiceImpl implements IFileService {
 
+    private static final long DEFAULT_USER_ID = 1L;
     private static final int VECTOR_STATUS_NOT_STORED = 0;
     private static final int VECTOR_STATUS_STORED = 1;
     private static final int VECTOR_STATUS_FAILED = 2;
@@ -55,6 +58,7 @@ public class FileServiceImpl implements IFileService {
         if (file == null || file.isEmpty()) {
             return false;
         }
+        String normalizedChatId = chatId.trim();
 
         IiipPdfFile pdfFile = null;
         try {
@@ -63,12 +67,12 @@ public class FileServiceImpl implements IFileService {
             );
             String contentType = StringUtils.hasText(file.getContentType()) ? file.getContentType() : "application/pdf";
             byte[] content = file.getBytes();
-            OssUploadResult uploadResult = aliyunOSSOperator.upload(content, originalFilename, contentType, chatId);
+            OssUploadResult uploadResult = aliyunOSSOperator.upload(content, originalFilename, contentType, normalizedChatId);
 
             LocalDateTime now = LocalDateTime.now();
             pdfFile = new IiipPdfFile()
-                    .setChatId(chatId)
-                    .setUserId(1L)
+                    .setChatId(normalizedChatId)
+                    .setUserId(currentUserId())
                     .setOriginalFilename(originalFilename)
                     .setOssBucket(uploadResult.bucketName())
                     .setOssKey(uploadResult.ossKey())
@@ -80,7 +84,7 @@ public class FileServiceImpl implements IFileService {
                     .setUpdateTime(now);
             pdfFileService.saveOrReplace(pdfFile);
 
-            boolean vectorStored = writeToVectorStore(file.getResource(), chatId);
+            boolean vectorStored = writeToVectorStore(file.getResource(), normalizedChatId);
             pdfFileService.updateVectorStatus(pdfFile.getId(), vectorStored ? VECTOR_STATUS_STORED : VECTOR_STATUS_FAILED);
             return vectorStored;
         } catch (Exception e) {
@@ -240,5 +244,10 @@ public class FileServiceImpl implements IFileService {
             }
         }
         return -1;
+    }
+
+    private Long currentUserId() {
+        UserDTO user = UserHolder.getUser();
+        return user == null || user.getId() == null ? DEFAULT_USER_ID : user.getId();
     }
 }

@@ -11,6 +11,8 @@ public interface IIiipChatRecordService extends IService<IiipChatRecord> {
 
     List<String> findConversationIds(String type);
 
+    String resolveConversationId(String type, String conversationId);
+
     /**
      * 根据会话id删除会话记录，同时删除iiip_chat_record和spring_ai_chat_memory两张表中
      * 该会话id对应的全部记录

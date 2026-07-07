@@ -34,9 +34,10 @@ public class ChatController {
 
         // 保存会话记录
         recordService.saveRecord("chat", chatId);
+        String conversationId = recordService.resolveConversationId("chat", chatId);
         return chatClient
                 .prompt(prompt) // 传入user提示词
-                .advisors(as -> as.param(ChatMemory.CONVERSATION_ID, chatId))
+                .advisors(as -> as.param(ChatMemory.CONVERSATION_ID, conversationId))
                 .stream().content();
 //                .chatResponse()
 //                .mapNotNull(this::handleReasonerMessage);

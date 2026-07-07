@@ -1,5 +1,6 @@
 package com.chy.ai;
 
+import com.chy.ai.util.PasswordEncoder;
 import com.chy.ai.util.VectorDistanceUtils;
 import org.junit.jupiter.api.Test;
 import org.springframework.ai.document.Document;
@@ -103,5 +104,11 @@ class IiipApplicationTests {
 			System.out.println(doc.getText());
 		}
 	}
+
+	@Test
+	public void testPasswordEncoder(){
+		System.out.println(PasswordEncoder.encode("1234"));
+	}
+
 
 }

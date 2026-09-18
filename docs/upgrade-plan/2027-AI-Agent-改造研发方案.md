@@ -8,7 +8,7 @@
 
 原始方案交付时完成了代码审计、公开资料调研和研发设计。本文中的性能、效果和可靠性目标仍是**待验证的验收目标**；实际完成情况请以随后补充的验证记录为准，不能把目标数字作为项目成绩。
 
-**实施进度补记（2026-09-18）：** 核心工程版已完成实际开发、联调与 Docker 部署。Python 独立项目位于 `D:/develop/intelligent-agent-runtime`，通过内部 HTTP 业务工具及 RabbitMQ 命令与原 Java/Vue 项目联动。已落地多空间权限、知识版本与引用、审批恢复、幂等预约、取消、规则评测、可观测及备份恢复；多 worker、300样本正式效果基准、OCR/reranker和MCP/多Agent实验仍有独立验收条件。实际数据以[开发与验证记录](./开发与验证记录.md)及[研发接口契约](./研发接口契约.md)为准。
+**实施进度补记（2026-09-18）：** 核心工程版已完成实际开发、联调与 Docker 部署。独立 Python 服务见 [intelligent-agent-runtime 仓库](https://gitee.com/chy66666/intelligent-agent-runtime.git)，通过内部 HTTP 业务工具及 RabbitMQ 命令与原 Java/Vue 项目联动。已落地多空间权限、知识版本与引用、审批恢复、幂等预约、取消、规则评测、可观测及备份恢复；多 worker、300样本正式效果基准、OCR/reranker和MCP/多Agent实验仍有独立验收条件。实际数据以[开发与验证记录](./开发与验证记录.md)及[研发接口契约](./研发接口契约.md)为准。
 
 ## 1. 先给结论
 
@@ -50,7 +50,7 @@
 | 身份 | Redis Token 登录、会话归属检查 | 已有鉴权；需要补齐上传路径和异步边界 |
 | 前端 | Vue 3、Vite 6、Markdown、DOMPurify、PDF 预览；Pinia/Naive UI 已安装但未形成业务状态/组件体系 | 足够承载目标产品，需真正使用类型与状态治理，无需重写 React |
 
-版本依据：[后端 pom.xml](D:/java/SpringAI/intelligent-integrated-interaction-platform/pom.xml:6)、[前端 package.json](D:/develop/web-intelligent-integrated-interaction-platform/package.json:1)。前端 package 声明包含范围版本，不能把它们当成生产环境实际安装版本。MySQL、Redis 服务端的实际运行版本未核验。
+版本依据：[后端 pom.xml](../../pom.xml#L6)、[前端 package.json](https://gitee.com/chy66666/web-intelligent-integrated-interaction-platform/blob/master/package.json#L1)。前端 package 声明包含范围版本，不能把它们当成生产环境实际安装版本。MySQL、Redis 服务端的实际运行版本未核验。
 
 ### 2.2 必须优先解决的问题
 
@@ -58,19 +58,19 @@
 
 | 优先级 | 代码依据与发现 | 改造动作 |
 |---|---|---|
-| P0 | [PDF 上传入口](D:/java/SpringAI/intelligent-integrated-interaction-platform/src/main/java/com/chy/ai/controller/PdfController.java:40) 没有校验会话所有者；[切块元数据](D:/java/SpringAI/intelligent-integrated-interaction-platform/src/main/java/com/chy/ai/service/impl/FileServiceImpl.java:140) 仅用传入的 chatId 关联向量 | 上传前查权限；服务端生成 document/version ID；检索强制空间与文档权限；补双用户污染测试 |
-| P0 | [PDF 过滤表达式](D:/java/SpringAI/intelligent-integrated-interaction-platform/src/main/java/com/chy/ai/controller/PdfController.java:83) 拼接 chatId；[排序字段](D:/java/SpringAI/intelligent-integrated-interaction-platform/src/main/java/com/chy/ai/tools/CourseTools.java:34) 使用模型传入字符串 | 使用结构化过滤、ID 格式校验、排序枚举。这里是可推导的注入风险，尚未做利用复现 |
-| P0 | [预约工具](D:/java/SpringAI/intelligent-integrated-interaction-platform/src/main/java/com/chy/ai/tools/CourseTools.java:45) 直接把模型参数写库 | 先创建待确认操作，再由服务端审批与命令执行；加入归属、业务校验和幂等 |
-| P1 | [身份回退逻辑](D:/java/SpringAI/intelligent-integrated-interaction-platform/src/main/java/com/chy/ai/service/impl/FileServiceImpl.java:249) 在取不到用户时默认用户 1；ThreadLocal 未完整处理异步流生命周期 | 缺少身份直接拒绝；跨线程显式传递不可变身份对象；补并发/异步隔离测试 |
-| P1 | [密码实现](D:/java/SpringAI/intelligent-integrated-interaction-platform/src/main/java/com/chy/ai/util/PasswordEncoder.java:21) 是加盐单次 MD5 | 使用 BCrypt/Argon2，并支持旧密码登录成功后渐进迁移 |
-| P1 | [20 条 memory](D:/java/SpringAI/intelligent-integrated-interaction-platform/src/main/java/com/chy/ai/config/IiipConfiguration.java:45) 被[历史接口](D:/java/SpringAI/intelligent-integrated-interaction-platform/src/main/java/com/chy/ai/controller/ChatHistoryController.java:43) 直接读取 | 独立保存完整消息；窗口和摘要仅是模型输入视图 |
-| P1 | [同步文件管线](D:/java/SpringAI/intelligent-integrated-interaction-platform/src/main/java/com/chy/ai/service/impl/FileServiceImpl.java:57) 串联 OSS、DB、解析、Embedding、向量写入 | 改为可重试 ingestion job；新版本 READY 后再切换；补偿旧对象和索引 |
-| P1 | [删除会话](D:/java/SpringAI/intelligent-integrated-interaction-platform/src/main/java/com/chy/ai/service/impl/IiipChatRecordServiceImpl.java:93) 只删记录与 memory | 定义消息、知识库、对象、向量各自生命周期，不能仅靠删除聊天行 |
-| P1 | [流式接口](D:/java/SpringAI/intelligent-integrated-interaction-platform/src/main/java/com/chy/ai/controller/ChatController.java:31) 为 text/html 内容流 | 建立标准 SSE 事件协议、runId、seq、恢复游标、错误及结束事件 |
+| P0 | [PDF 上传入口](../../src/main/java/com/chy/ai/controller/PdfController.java#L40) 没有校验会话所有者；[切块元数据](../../src/main/java/com/chy/ai/service/impl/FileServiceImpl.java#L140) 仅用传入的 chatId 关联向量 | 上传前查权限；服务端生成 document/version ID；检索强制空间与文档权限；补双用户污染测试 |
+| P0 | [PDF 过滤表达式](../../src/main/java/com/chy/ai/controller/PdfController.java#L83) 拼接 chatId；[排序字段](../../src/main/java/com/chy/ai/tools/CourseTools.java#L34) 使用模型传入字符串 | 使用结构化过滤、ID 格式校验、排序枚举。这里是可推导的注入风险，尚未做利用复现 |
+| P0 | [预约工具](../../src/main/java/com/chy/ai/tools/CourseTools.java#L45) 直接把模型参数写库 | 先创建待确认操作，再由服务端审批与命令执行；加入归属、业务校验和幂等 |
+| P1 | [身份回退逻辑](../../src/main/java/com/chy/ai/service/impl/FileServiceImpl.java#L249) 在取不到用户时默认用户 1；ThreadLocal 未完整处理异步流生命周期 | 缺少身份直接拒绝；跨线程显式传递不可变身份对象；补并发/异步隔离测试 |
+| P1 | [密码实现](../../src/main/java/com/chy/ai/util/PasswordEncoder.java#L21) 是加盐单次 MD5 | 使用 BCrypt/Argon2，并支持旧密码登录成功后渐进迁移 |
+| P1 | [20 条 memory](../../src/main/java/com/chy/ai/config/IiipConfiguration.java#L45) 被[历史接口](../../src/main/java/com/chy/ai/controller/ChatHistoryController.java#L43) 直接读取 | 独立保存完整消息；窗口和摘要仅是模型输入视图 |
+| P1 | [同步文件管线](../../src/main/java/com/chy/ai/service/impl/FileServiceImpl.java#L57) 串联 OSS、DB、解析、Embedding、向量写入 | 改为可重试 ingestion job；新版本 READY 后再切换；补偿旧对象和索引 |
+| P1 | [删除会话](../../src/main/java/com/chy/ai/service/impl/IiipChatRecordServiceImpl.java#L93) 只删记录与 memory | 定义消息、知识库、对象、向量各自生命周期，不能仅靠删除聊天行 |
+| P1 | [流式接口](../../src/main/java/com/chy/ai/controller/ChatController.java#L31) 为 text/html 内容流 | 建立标准 SSE 事件协议、runId、seq、恢复游标、错误及结束事件 |
 | P1 | 前端 PDF 上传路径只检查 HTTP 成功，后端 Result.fail 仍可返回 HTTP 200 | 统一错误契约；“已上传”与“已索引、可问答”分开显示 |
 | P1 | 前端流式更新依赖当前页面消息数组，切换会话后旧流可能更新新会话 | 按 runId/messageId 更新固定记录；切页释放订阅；保留后台任务 |
-| P1 | 前端有图片/音频/视频附件入口，[后端聊天接口](D:/java/SpringAI/intelligent-integrated-interaction-platform/src/main/java/com/chy/ai/controller/ChatController.java:32) 却只接 prompt/chatId | 先按实际能力关闭或限制入口；新增能力后再开放 |
-| P1 | [测试类](D:/java/SpringAI/intelligent-integrated-interaction-platform/src/test/java/com/chy/ai/IiipApplicationTests.java:21) 没有断言，部分测试真实调用模型并写向量库 | 建隔离测试配置、测试数据和 mock provider；默认 CI 不触发真实计费接口 |
+| P1 | 前端有图片/音频/视频附件入口，[后端聊天接口](../../src/main/java/com/chy/ai/controller/ChatController.java#L32) 却只接 prompt/chatId | 先按实际能力关闭或限制入口；新增能力后再开放 |
+| P1 | [测试类](../../src/test/java/com/chy/ai/IiipApplicationTests.java#L21) 没有断言，部分测试真实调用模型并写向量库 | 建隔离测试配置、测试数据和 mock provider；默认 CI 不触发真实计费接口 |
 
 额外核对了本机 Spring AI 1.0.0 依赖源码：MessageWindowChatMemory 会裁剪后调用 saveAll，JDBC 实现会替换对应会话的消息。因此旧消息会从该存储中淘汰，而不只是“不再放入 prompt”。游戏使用内存 memory，历史却查 JDBC，也是需要修复的实际错位。
 
@@ -984,10 +984,10 @@ M3 的多 worker fencing 应单独建研究型 issue，先证明事务适配可�
 
 建议先读本文第 1、5、6、18、19 节确认产品和投入，再按研发模块读其余章节。
 
-- [2027 岗位调研：8 个官方 2027 完整 JD 与 5 个实习/社招参照](D:/java/SpringAI/intelligent-integrated-interaction-platform/docs/upgrade-plan/2027岗位调研.md)
-- [后端现状审计：全量源码与准确位置](D:/java/SpringAI/intelligent-integrated-interaction-platform/docs/upgrade-plan/后端现状审计.md)
-- [前端现状审计：契约、状态、构建验证与位置](D:/java/SpringAI/intelligent-integrated-interaction-platform/docs/upgrade-plan/前端现状审计.md)
-- [技术资料与开源项目阅读清单](D:/java/SpringAI/intelligent-integrated-interaction-platform/docs/upgrade-plan/技术资料与开源阅读清单.md)
+- [2027 岗位调研：8 个官方 2027 完整 JD 与 5 个实习/社招参照](2027岗位调研.md)
+- [后端现状审计：全量源码与准确位置](后端现状审计.md)
+- [前端现状审计：契约、状态、构建验证与位置](前端现状审计.md)
+- [技术资料与开源项目阅读清单](技术资料与开源阅读清单.md)
 - [模型服务与 API 配置：百炼单 Key 决策、迁移与验收](./模型服务与API配置.md)
 - [中间件与基础设施清单](./中间件与基础设施清单.md)
 

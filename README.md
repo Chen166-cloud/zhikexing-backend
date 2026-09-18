@@ -4,13 +4,31 @@
 
 ## 三个独立项目
 
-| 项目 | 本机位置 | 职责 |
+| 项目 | Git 仓库 | 职责 |
 |---|---|---|
-| Java 后端（本仓库） | `D:/java/SpringAI/intelligent-integrated-interaction-platform` | 登录、空间成员、对外 API、审批、业务幂等与 outbox |
-| Python：intelligent-agent-runtime | `D:/develop/intelligent-agent-runtime` | LangGraph、checkpoint、事件、知识库、模型适配与评测 |
-| Vue 前端 | `D:/develop/web-intelligent-integrated-interaction-platform` | 工作台、SSE、审批卡、引用预览、知识与评测管理 |
+| Java 后端（本仓库） | [intelligent-integrated-interaction-platform](https://gitee.com/chy66666/intelligent-integrated-interaction-platform.git) | 登录、空间成员、对外 API、审批、业务幂等与 outbox |
+| Python：intelligent-agent-runtime | [intelligent-agent-runtime](https://gitee.com/chy66666/intelligent-agent-runtime.git) | LangGraph、checkpoint、事件、知识库、模型适配与评测 |
+| Vue 前端 | [web-intelligent-integrated-interaction-platform](https://gitee.com/chy66666/web-intelligent-integrated-interaction-platform.git) | 工作台、SSE、审批卡、引用预览、知识与评测管理 |
 
 Python 是独立目录、独立依赖和独立 Docker 镜像，通过服务接口联动。统一部署由本仓库 Compose 管理，外部项目路径通过 `AGENT_RUNTIME_PATH`、`FRONTEND_PATH` 配置。
+
+在任意开发目录下将三个仓库克隆为同级目录，默认配置即可找到构建上下文：
+
+```sh
+git clone https://gitee.com/chy66666/intelligent-integrated-interaction-platform.git
+git clone https://gitee.com/chy66666/intelligent-agent-runtime.git
+git clone https://gitee.com/chy66666/web-intelligent-integrated-interaction-platform.git
+cd intelligent-integrated-interaction-platform
+```
+
+```text
+任意开发目录/
+├── intelligent-integrated-interaction-platform/
+├── intelligent-agent-runtime/
+└── web-intelligent-integrated-interaction-platform/
+```
+
+Compose 默认使用 `../intelligent-agent-runtime` 和 `../web-intelligent-integrated-interaction-platform`，相对于本仓库根目录解析。若目录布局不同，在本机未提交的 `.env` 中设置这两个变量；不需要修改源码，也不要提交其他机器无法访问的绝对路径。现有 `.env` 不会被初始化脚本覆盖。
 
 ## 业务闭环
 
@@ -48,9 +66,9 @@ flowchart LR
 
 ## Docker 启动
 
-完整安装、端口、环境变量、备份恢复与故障处理见 [Docker 部署文档](docs/deployment/Docker部署文档.md)。本机实际使用 Ubuntu-22.04 内的 Docker Engine，WSL 数据目录已迁到 `E:/WSL/IIIP-Ubuntu-22.04`。
+完整安装、端口、环境变量、备份恢复与故障处理见 [Docker 部署文档](docs/deployment/Docker部署文档.md)。支持 Docker Desktop、Linux Docker Engine 或 WSL 内 Docker Engine，仓库不依赖固定盘符、用户名或 WSL 数据目录。
 
-首次配置（已有 `.env` 不重复初始化）：
+以下命令在 Java 仓库根目录的 PowerShell 7 中运行，示例使用 WSL Docker Engine。已有 `.env` 不重复初始化；WSL 默认使用系统默认发行版，可通过 `IIIP_WSL_DISTRIBUTION` 选择已安装的发行版：
 
 ```powershell
 .\deploy\Start-WslEngine.ps1
@@ -61,6 +79,8 @@ $env:DASHSCOPE_API_KEY = [Environment]::GetEnvironmentVariable('API-KEY')
 ```
 
 如果已经使用规范变量 `DASHSCOPE_API_KEY`，跳过映射步骤。真实凭据保留在环境与被 Git 忽略的本地 `.env`；Vue 不读取模型密钥。数据库和内部服务凭据与模型 Key 分开管理。
+
+Docker Desktop 使用同一初始化脚本，跳过 `Start-WslEngine.ps1`，Compose 包装命令去掉 `-Wsl`。Linux 开发者可使用 PowerShell 7 初始化配置，再在仓库根目录直接执行 `docker compose --profile app --profile observability up -d --build`。
 
 主要入口：
 

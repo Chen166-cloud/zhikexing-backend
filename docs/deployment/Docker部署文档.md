@@ -25,32 +25,34 @@
 
 默认 `RABBITMQ_ENABLED=true`，Java outbox 向持久 exchange `iiip.agent` 投递，Python 消费 `iiip.agent.commands`；失败队列为 `iiip.agent.failed`。Java 等待 publisher confirm 后标记投递成功，Python 先持久接收再确认消息。设为 `false` 可显式使用 HTTP 投递模式，两个应用必须使用同一开关。模型遥测经 OTLP 接入 Langfuse，实际链路验证见验证记录。Elasticsearch、LiteLLM、vLLM、Temporal 属于方案按需扩展项，本部署不默认安装。
 
-## 2. 环境要求与本机引擎
+## 2. 环境要求与引擎选择
 
 建议为完整应用与观测预留 8 vCPU、16 GB 内存和至少 30 GB 可用磁盘，首轮镜像下载需要网络。此值是启动规划，实际资源观察见部署验证记录。WSL 的 `df` 显示虚拟磁盘上限，不能代替宿主盘可用空间；启动前同时检查 PowerShell `Get-PSDrive -PSProvider FileSystem` 和 WSL 的 `df -h`。Linux 使用 Docker Engine 和 Compose 插件，Windows 可使用 Docker Desktop Linux 容器或 WSL 内独立 Docker Engine。
 
-本次机器的 Docker Desktop 4.41.2 启动时遭遇遗留 `dockerInference` socket 访问错误。没有执行恢复出厂设置，也没有清理 Desktop 卷；实际部署使用现有 Ubuntu-22.04 / WSL2 中独立安装的官方 Docker Engine。首次下载镜像时 C 盘不足，经用户明确批准后使用官方 `wsl --manage --move` 将整个 Ubuntu-22.04 保留迁移到 `E:\WSL\IIIP-Ubuntu-22.04`；注册路径和可写挂载已复核。该引擎的镜像、网络、卷位于 Ubuntu 发行版中，与 Docker Desktop 分开。Windows 的裸 `docker` 命令仍连接 Desktop，管理本部署请使用下方 `-Wsl` 包装脚本。
+根据自己的环境选择 Docker Desktop、Linux Docker Engine 或 WSL 内 Docker Engine。WSL 中的独立引擎与 Docker Desktop 的镜像、网络和卷分开；使用 WSL 引擎时通过 `Compose.ps1 -Wsl` 管理。作者机器上的迁盘与故障过程保留在[部署验证记录](Docker部署验证记录.md)，不作为其他电脑的安装步骤。
 
-首次在新的 Ubuntu 环境安装引擎：
+首次在新的 Ubuntu 环境安装引擎：进入所选 Ubuntu/WSL 终端，在已克隆的 Java 仓库根目录执行。路径由克隆位置决定：
 
-```powershell
-wsl -d Ubuntu-22.04 -u root --exec bash /mnt/d/java/SpringAI/intelligent-integrated-interaction-platform/deploy/install-docker-ubuntu.sh
+```sh
+sudo bash deploy/install-docker-ubuntu.sh
 ```
 
-脚本按 [Docker 官方 Ubuntu 安装方式](https://docs.docker.com/engine/install/ubuntu/)配置官方 APT 源并启动 systemd 服务。已有 `dockerd` 时仅启动服务，不改装版本。恢复本次 WSL 引擎：
+脚本按 [Docker 官方 Ubuntu 安装方式](https://docs.docker.com/engine/install/ubuntu/)配置官方 APT 源并启动 systemd 服务。已有 `dockerd` 时仅启动服务，不改装版本。在 Windows PowerShell 7 的 Java 仓库根目录启动 WSL 引擎：
 
 ```powershell
 ./deploy/Start-WslEngine.ps1
 ./deploy/Compose.ps1 -Wsl version
 ```
 
-微软明确说明 [systemd 服务不会保持 WSL 实例运行](https://learn.microsoft.com/en-us/windows/wsl/systemd)。`Start-WslEngine.ps1` 启动隐藏的普通 WSL 会话，避免最后一个构建/终端进程退出后发行版自动停止；Windows 重启后需重新执行。停止整套服务后，可在任务管理器关闭该 `wsl.exe` 会话；`wsl --terminate Ubuntu-22.04` 会同时停止该发行版里的其他工作，使用前先确认。
+默认采用系统默认 WSL 发行版。若引擎位于其他发行版，先运行 `wsl --list --quiet` 查看名称，再设置 `$env:IIIP_WSL_DISTRIBUTION = '<实际发行版名称>'`；`Start-WslEngine.ps1` 也支持显式 `-Distribution`。`Compose.ps1` 通过环境变量选择发行版，其余参数保留给 Docker Compose。脚本使用 `wslpath` 转换当前仓库路径，不假设固定盘符或挂载点。
+
+微软明确说明 [systemd 服务不会保持 WSL 实例运行](https://learn.microsoft.com/en-us/windows/wsl/systemd)。`Start-WslEngine.ps1` 启动隐藏的普通 WSL 会话，避免最后一个构建/终端进程退出后发行版自动停止；Windows 重启后需重新执行。停止整套服务后，可在任务管理器关闭该 `wsl.exe` 会话；终止整个发行版会同时停止其中其他工作，不能把它当作仅停止本项目的命令。
 
 普通 Linux 在仓库根目录直接执行本文对应的 `docker compose ...` 命令；健康的 Docker Desktop 可去掉包装脚本的 `-Wsl`。
 
 ## 3. 首次启动
 
-在后端仓库根目录执行：
+先按后端 [README](../../README.md#三个独立项目) 提供的 Gitee 地址克隆三个仓库，推荐放在同一个父目录。再在 Java 仓库根目录的 PowerShell 7 中执行：
 
 ```powershell
 # 仅首次运行。已存在 .env 时拒绝覆盖，以保护当前数据库凭据。
@@ -65,7 +67,11 @@ wsl -d Ubuntu-22.04 -u root --exec bash /mnt/d/java/SpringAI/intelligent-integra
 ./deploy/Compose.ps1 -Wsl --profile observability ps
 ```
 
-PowerShell 脚本要求 PowerShell 7。`.env` 已被 Git 忽略；脚本只写随机基础设施凭据，不复制模型 Key。前端、Java、Python 是三个独立项目。`FRONTEND_PATH` 指向实际前端仓库，WSL 使用 `/mnt/d/develop/web-intelligent-integrated-interaction-platform`，Docker Desktop 使用 `D:/develop/web-intelligent-integrated-interaction-platform`。`AGENT_RUNTIME_PATH` 指向独立 Python 项目，WSL 使用 `/mnt/d/develop/intelligent-agent-runtime`，Docker Desktop 使用 `D:/develop/intelligent-agent-runtime`。换机器时同步修改这两行；Python 项目需要自己的 Dockerfile 和依赖锁文件。
+PowerShell 脚本要求 PowerShell 7。`.env` 已被 Git 忽略；脚本只写随机基础设施凭据，不复制模型 Key。默认 `FRONTEND_PATH=../web-intelligent-integrated-interaction-platform`、`AGENT_RUNTIME_PATH=../intelligent-agent-runtime`，两个构建上下文都相对于 Java 仓库根目录。按同级结构克隆，在 Windows Docker Desktop、WSL 或 Linux 上均无需把路径改成作者机器的地址。
+
+如果自定义了克隆目录名或存放位置，可在首次初始化时传 `-FrontendPath` / `-AgentRuntimePath`，或编辑本机 `.env`。优先填写相对于 Java 仓库根目录的路径，例如 `../../frontend/web`。使用绝对路径时，Docker Desktop 填当前电脑路径，WSL Docker 填对应 Linux 可访问路径；这些个人配置不要提交。初始化脚本拒绝覆盖已有 `.env`，避免重置数据库密码。
+
+Linux 开发者安装 PowerShell 7 后可运行 `pwsh ./deploy/Initialize-Environment.ps1` 完成同一随机凭据初始化，随后使用本文对应的原生 `docker compose` 命令；只有 Windows 的 WSL 包装方式需要 `-Wsl`。
 
 使用当前终端的 `DASHSCOPE_API_KEY`。若原系统仍使用 `API-KEY`，在当前进程做一次映射，不把密钥写进命令或文档：
 
@@ -120,10 +126,10 @@ Grafana 自动加载 IIIP 运行总览，涵盖抓取状态、Java 请求速率�
 
 在 WSL 的仓库根目录执行 `bash deploy/backup.sh`，脚本暂停三项应用写入，备份 MySQL、Agent PG、Redis，再停止 MinIO 和 RabbitMQ，备份它们的命名卷，退出时恢复对象存储、Broker 和应用。Broker 尚未进入 inbox 的消息不能仅靠数据库备份恢复。输出目录 `backups/<时间>`，包含 SHA256 校验文件；该目录不得提交。生产环境还需要异地副本、保留策略和加密存储。
 
-本机 WSL 引擎由 root 管理，可直接从 PowerShell 执行；脚本退出前等待应用重新 healthy：
+使用 WSL 独立引擎时，进入所选发行版的 Java 仓库根目录执行；需要 Docker 权限时使用 sudo，脚本退出前等待应用重新 healthy：
 
-```powershell
-wsl -d Ubuntu-22.04 -u root --cd /mnt/d/java/SpringAI/intelligent-integrated-interaction-platform --exec bash deploy/backup.sh
+```sh
+sudo bash deploy/backup.sh
 ```
 
 恢复必须先在新的 Compose 项目和新卷中演练，不能直接覆盖现有实例：

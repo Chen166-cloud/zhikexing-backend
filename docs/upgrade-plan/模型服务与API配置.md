@@ -20,7 +20,7 @@
 
 ## 2. 当前配置与目标配置
 
-改造前后端以 DeepSeek 为聊天默认提供方，并有 `qwen3.7-max` 配置。改造后 Java 默认关闭旧 AI 入口，独立 Python 项目 `D:/develop/intelligent-agent-runtime` 统一读取 `qwen3.7-flash` 和 `text-embedding-v4` / 1024 维。当前百炼 Key 可继续来自已有 Windows 环境变量 `API-KEY`。
+改造前后端以 DeepSeek 为聊天默认提供方，并有 `qwen3.7-max` 配置。改造后 Java 默认关闭旧 AI 入口，独立 Python 项目 [intelligent-agent-runtime](https://gitee.com/chy66666/intelligent-agent-runtime.git) 统一读取 `qwen3.7-flash` 和 `text-embedding-v4` / 1024 维。当前百炼 Key 可继续来自已有 Windows 环境变量 `API-KEY`。
 
 规范环境变量名为 `DASHSCOPE_API_KEY`，Python 和 Java 保留 `API-KEY` 兼容读取。本机 Compose 通过当前进程将已有 Key 映射为规范名传入容器，没有删除系统中的旧变量，也无须申请第二把 Key。
 

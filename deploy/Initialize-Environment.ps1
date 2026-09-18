@@ -1,4 +1,9 @@
-param([switch]$Wsl)
+param(
+    [switch]$Wsl,
+    [string]$Distribution = $env:IIIP_WSL_DISTRIBUTION,
+    [string]$FrontendPath = '../web-intelligent-integrated-interaction-platform',
+    [string]$AgentRuntimePath = '../intelligent-agent-runtime'
+)
 $ErrorActionPreference = 'Stop'
 $repository = Split-Path $PSScriptRoot -Parent
 $environmentPath = Join-Path $repository '.env'
@@ -9,6 +14,17 @@ function New-Secret {
     $bytes = [byte[]]::new(32)
     [System.Security.Cryptography.RandomNumberGenerator]::Fill($bytes)
     return [Convert]::ToHexString($bytes).ToLowerInvariant()
+}
+function Convert-ProjectPath([string]$Path) {
+    # 相对路径以 Java 仓库为基准，克隆到其他目录后仍然有效。
+    if ($Wsl -and $Path -match '^[A-Za-z]:[\\/]') {
+        $distributionArguments = @()
+        if ($Distribution) { $distributionArguments = @('--distribution', $Distribution) }
+        $converted = & wsl @distributionArguments --exec wslpath -a -u $Path
+        if ($LASTEXITCODE -ne 0) { throw "无法转换 WSL 项目路径：$Path" }
+        return $converted.Trim()
+    }
+    return $Path.Replace('\', '/')
 }
 $content = Get-Content -LiteralPath (Join-Path $repository '.env.example')
 $secretNames = @('MYSQL_ROOT_PASSWORD', 'MYSQL_PASSWORD', 'POSTGRES_PASSWORD', 'REDIS_PASSWORD',
@@ -21,12 +37,12 @@ $result = foreach ($line in $content) {
     elseif ($name -eq 'LANGFUSE_PUBLIC_KEY') { "LANGFUSE_PUBLIC_KEY=pk-lf-$(New-Secret)" }
     elseif ($name -eq 'LANGFUSE_SECRET_KEY') { "LANGFUSE_SECRET_KEY=sk-lf-$(New-Secret)" }
     elseif ($name -eq 'FRONTEND_PATH') {
-        if ($Wsl) { 'FRONTEND_PATH=/mnt/d/develop/web-intelligent-integrated-interaction-platform' }
-        else { 'FRONTEND_PATH=D:/develop/web-intelligent-integrated-interaction-platform' }
+        $path = (Convert-ProjectPath $FrontendPath).Replace("'", "\'")
+        "FRONTEND_PATH='$path'"
     }
     elseif ($name -eq 'AGENT_RUNTIME_PATH') {
-        if ($Wsl) { 'AGENT_RUNTIME_PATH=/mnt/d/develop/intelligent-agent-runtime' }
-        else { 'AGENT_RUNTIME_PATH=D:/develop/intelligent-agent-runtime' }
+        $path = (Convert-ProjectPath $AgentRuntimePath).Replace("'", "\'")
+        "AGENT_RUNTIME_PATH='$path'"
     }
     else { $line }
 }

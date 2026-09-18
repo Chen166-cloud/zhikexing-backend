@@ -25,6 +25,7 @@ import java.util.Objects;
 @RequiredArgsConstructor
 @RestController
 @RequestMapping("/ai/pdf")
+@org.springframework.boot.autoconfigure.condition.ConditionalOnProperty(name = "app.legacy-ai-enabled", havingValue = "true")
 public class PdfController {
 
     private final IFileService fileService;
@@ -32,12 +33,14 @@ public class PdfController {
     private final ChatClient pdfChatClient;
 
     private final IIiipChatRecordService recordService;
+    private final org.springframework.ai.vectorstore.VectorStore vectorStore;
 
     /**
      * 文件上传
      */
     @RequestMapping("/upload/{chatId}")
     public Result uploadPdf(@PathVariable String chatId, @RequestParam("file") MultipartFile file) {
+        recordService.resolveConversationId("pdf", chatId);
         try {
             if (!Objects.equals(file.getContentType(), "application/pdf")) {
                 return Result.fail("只能上传PDF文件！");
@@ -77,10 +80,15 @@ public class PdfController {
     public Flux<String> chat(String prompt, String chatId) {
         recordService.saveRecord("pdf", chatId);
         String conversationId = recordService.resolveConversationId("pdf", chatId);
+        var filter = new org.springframework.ai.vectorstore.filter.FilterExpressionBuilder();
+        var request = org.springframework.ai.vectorstore.SearchRequest.builder()
+                .topK(2).similarityThreshold(0.5)
+                .filterExpression(filter.and(filter.eq("chat_id", conversationId),
+                        filter.eq("user_id", String.valueOf(com.chy.ai.util.UserHolder.requireUserId()))).build()).build();
         return pdfChatClient
                 .prompt(prompt)
                 .advisors(a -> a.param(ChatMemory.CONVERSATION_ID, conversationId))
-                .advisors(a -> a.param(QuestionAnswerAdvisor.FILTER_EXPRESSION, "chat_id == '" + conversationId + "'"))
+                .advisors(QuestionAnswerAdvisor.builder(vectorStore).searchRequest(request).build())
                 .stream()
                 .content();
     }

@@ -1,6 +1,6 @@
 package com.chy.ai.service.impl;
 
-import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.baomidou.mybatisplus.spring.service.impl.ServiceImpl;
 import com.chy.ai.entity.po.UserInfo;
 import com.chy.ai.entity.vo.LoginFormDTO;
 import com.chy.ai.entity.vo.Result;
@@ -53,6 +53,11 @@ public class UserInfoServiceImpl extends ServiceImpl<UserInfoMapper, UserInfo> i
         }
         if (!PasswordEncoder.matches(user.getPassword(), password)) {
             return Result.fail("密码错误");
+        }
+        if (PasswordEncoder.needsUpgrade(user.getPassword())) {
+            lambdaUpdate().eq(UserInfo::getId, user.getId())
+                    .eq(UserInfo::getPassword, user.getPassword())
+                    .set(UserInfo::getPassword, PasswordEncoder.encode(password)).update();
         }
         return Result.ok(saveUserToRedis(user));
     }
@@ -140,6 +145,9 @@ public class UserInfoServiceImpl extends ServiceImpl<UserInfoMapper, UserInfo> i
         }
         if (!StringUtils.hasText(password)) {
             return Result.fail("密码不能为空");
+        }
+        if (password.getBytes(java.nio.charset.StandardCharsets.UTF_8).length > 72) {
+            return Result.fail("密码不能超过72字节");
         }
         return null;
     }

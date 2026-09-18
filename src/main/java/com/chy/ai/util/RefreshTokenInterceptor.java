@@ -3,7 +3,7 @@ package com.chy.ai.util;
 import com.chy.ai.entity.vo.UserDTO;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.util.StringUtils;
-import org.springframework.web.servlet.HandlerInterceptor;
+import org.springframework.web.servlet.AsyncHandlerInterceptor;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -13,7 +13,7 @@ import java.util.concurrent.TimeUnit;
 import static com.chy.ai.contants.RedisConstants.LOGIN_USER_KEY;
 import static com.chy.ai.contants.RedisConstants.LOGIN_USER_TTL;
 
-public class RefreshTokenInterceptor implements HandlerInterceptor {
+public class RefreshTokenInterceptor implements AsyncHandlerInterceptor {
 
     private final StringRedisTemplate stringRedisTemplate;
 
@@ -23,6 +23,7 @@ public class RefreshTokenInterceptor implements HandlerInterceptor {
 
     @Override
     public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) {
+        UserHolder.removeUser();
         String token = TokenUtils.normalize(request.getHeader("Authorization"));
         if (!StringUtils.hasText(token)) {
             return true;
@@ -43,6 +44,11 @@ public class RefreshTokenInterceptor implements HandlerInterceptor {
 
     @Override
     public void afterCompletion(HttpServletRequest request, HttpServletResponse response, Object handler, Exception ex) {
+        UserHolder.removeUser();
+    }
+
+    @Override
+    public void afterConcurrentHandlingStarted(HttpServletRequest request, HttpServletResponse response, Object handler) {
         UserHolder.removeUser();
     }
 

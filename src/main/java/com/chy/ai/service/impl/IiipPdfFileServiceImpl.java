@@ -1,7 +1,7 @@
 package com.chy.ai.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
-import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.baomidou.mybatisplus.spring.service.impl.ServiceImpl;
 import com.chy.ai.entity.po.IiipPdfFile;
 import com.chy.ai.entity.vo.UserDTO;
 import com.chy.ai.mapper.IiipPdfFileMapper;
@@ -12,7 +12,7 @@ import org.springframework.stereotype.Service;
 @Service
 public class IiipPdfFileServiceImpl extends ServiceImpl<IiipPdfFileMapper, IiipPdfFile> implements IIiipPdfFileService {
 
-    private static final long DEFAULT_USER_ID = 1L;
+
 
     @Override
     public IiipPdfFile getByChatId(String chatId) {
@@ -44,7 +44,7 @@ public class IiipPdfFileServiceImpl extends ServiceImpl<IiipPdfFileMapper, IiipP
 
     private Long currentUserId() {
         UserDTO user = UserHolder.getUser();
-        return user == null || user.getId() == null ? DEFAULT_USER_ID : user.getId();
+        return UserHolder.requireUserId();
     }
 
     private String normalizeChatId(String chatId) {

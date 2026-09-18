@@ -1,6 +1,6 @@
 package com.chy.ai.service.impl;
 
-import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.baomidou.mybatisplus.spring.service.impl.ServiceImpl;
 import com.chy.ai.entity.po.IiipChatRecord;
 import com.chy.ai.entity.vo.UserDTO;
 import com.chy.ai.mapper.IiipChatRecordMapper;
@@ -20,7 +20,7 @@ import java.util.List;
 @RequiredArgsConstructor
 public class IiipChatRecordServiceImpl extends ServiceImpl<IiipChatRecordMapper, IiipChatRecord> implements IIiipChatRecordService {
 
-    private static final long DEFAULT_USER_ID = 1L;
+
 
     private final SpringAiChatMemoryMapper springAiChatMemoryMapper;
 
@@ -107,7 +107,7 @@ public class IiipChatRecordServiceImpl extends ServiceImpl<IiipChatRecordMapper,
 
     private Long currentUserId() {
         UserDTO user = UserHolder.getUser();
-        return user == null || user.getId() == null ? DEFAULT_USER_ID : user.getId();
+        return UserHolder.requireUserId();
     }
 
     private String normalizeConversationId(String conversationId) {

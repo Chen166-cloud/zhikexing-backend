@@ -1,69 +1,88 @@
 spring:
   application:
     name: intelligent-integrated-interaction-platform
-
   ai:
     model:
-      chat: deepseek
-
+      chat: openai
     chat:
       memory:
         repository:
           jdbc:
             initialize-schema: never
-    deepseek:
-      api-key: ${DEEPSEEK_API_KEY}
-      chat:
-        options:
-          model: deepseek-v4-pro
-
     openai:
-      # 阿里云百炼兼容 OpenAI 接口
-      # Spring AI 默认会追加 /v1/chat/completions，所以这里保持到 compatible-mode 即可
-      base-url: https://dashscope.aliyuncs.com/compatible-mode
-      api-key: ${API-KEY}
-
+      # Spring AI 2 使用官方 SDK，base-url 必须包含兼容接口的 /v1。
+      base-url: ${DASHSCOPE_BASE_URL:https://dashscope.aliyuncs.com/compatible-mode/v1}
+      api-key: ${DASHSCOPE_API_KEY:${API-KEY:}}
       chat:
-        options:
-          model: qwen3.7-max
-
+        model: ${AGENT_CHAT_MODEL:qwen3.7-flash}
       embedding:
-        options:
-          model: text-embedding-v4
-          dimensions: 1024
-
+        model: text-embedding-v4
+        dimensions: 1024
     vectorstore:
       type: custom
       redis:
-        initialize-schema: true
-        index-name: iiip-pdf-index
-        prefix: "iiip:pdf:"
-
+        initialize-schema: false
+        index-name: iiip-pdf-secure-index
+        prefix: 'iiip:pdf:secure:'
   datasource:
-    driver-class-name: com.mysql.cj.jdbc.Driver
-    url: jdbc:mysql://localhost:3306/spring-ai-demo?serverTimezone=Asia/Shanghai&useUnicode=true&characterEncoding=utf-8&allowPublicKeyRetrieval=true&useSSL=false
-    username: root
-    password: 1234
-
+    driver-class-name: ${DB_DRIVER:com.mysql.cj.jdbc.Driver}
+    url: ${DB_URL:jdbc:mysql://localhost:3306/iiip_agent?serverTimezone=Asia/Shanghai&useUnicode=true&characterEncoding=utf-8&allowPublicKeyRetrieval=true&useSSL=false}
+    username: ${DB_USERNAME:root}
+    password: ${DB_PASSWORD:}
+  flyway:
+    enabled: true
+    baseline-on-migrate: true
+    baseline-version: 0
+  rabbitmq:
+    host: ${RABBITMQ_HOST:127.0.0.1}
+    port: ${RABBITMQ_PORT:5672}
+    username: ${RABBITMQ_USERNAME:iiip}
+    password: ${RABBITMQ_PASSWORD:}
+    virtual-host: ${RABBITMQ_VIRTUAL_HOST:iiip}
+    connection-timeout: 5s
+    publisher-confirm-type: correlated
+    publisher-returns: true
+    template:
+      mandatory: true
   data:
     redis:
-      host: 127.0.0.1
-      port: 6379
+      host: ${REDIS_HOST:127.0.0.1}
+      port: ${REDIS_PORT:6379}
+      password: ${REDIS_PASSWORD:}
       client-type: jedis
-
   servlet:
     multipart:
       max-file-size: 30MB
       max-request-size: 40MB
-
-# Aliyun OSS. Credentials are read from OSS_ACCESS_KEY_ID and OSS_ACCESS_KEY_SECRET.
+  mvc:
+    async:
+      request-timeout: 310000
+server:
+  port: ${SERVER_PORT:8080}
+app:
+  legacy-ai-enabled: ${LEGACY_AI_ENABLED:false}
+  cors-origins: ${CORS_ORIGINS:http://localhost:5173,http://127.0.0.1:5173,http://localhost:5176,http://127.0.0.1:5176,http://localhost:8088,http://127.0.0.1:8088}
+  agent:
+    runtime-url: ${AGENT_RUNTIME_URL:http://127.0.0.1:8000}
+    internal-token: ${AGENT_INTERNAL_TOKEN:}
+    rabbitmq-enabled: ${RABBITMQ_ENABLED:false}
+    publisher-confirm-timeout: 10s
 aliyun:
   oss:
-    endpoint: https://oss-cn-shanghai.aliyuncs.com
-    bucketName: chy-java-01
-    region: cn-shanghai
-
+    endpoint: ${OSS_ENDPOINT:https://oss-cn-shanghai.aliyuncs.com}
+    bucketName: ${OSS_BUCKET:}
+    region: ${OSS_REGION:cn-shanghai}
 logging:
   level:
-    org.springframework.ai: debug
-    com.chy.ai: debug
+    org.springframework.ai: WARN
+    com.chy.ai: INFO
+management:
+  health:
+    rabbit:
+      enabled: ${RABBITMQ_ENABLED:false}
+  server:
+    port: ${MANAGEMENT_PORT:8081}
+  endpoints:
+    web:
+      exposure:
+        include: health,prometheus

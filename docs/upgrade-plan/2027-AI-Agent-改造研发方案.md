@@ -6,7 +6,9 @@
 
 模型选型更新：2026-09-18，用户已确定日常 Agent 使用阿里云百炼 `qwen3.7-flash`，Embedding 保留 `text-embedding-v4` / 1024 维，两者共用一把百炼 API Key。具体配置、迁移边界与验收见[模型服务与 API 配置](./模型服务与API配置.md)。
 
-本次交付是代码审计、公开资料调研和研发设计，尚未实施下面的架构改造。所有性能、效果和可靠性数字均为**待验证的验收目标**，不是当前项目成绩。
+原始方案交付时完成了代码审计、公开资料调研和研发设计。本文中的性能、效果和可靠性目标仍是**待验证的验收目标**；实际完成情况请以随后补充的验证记录为准，不能把目标数字作为项目成绩。
+
+**实施进度补记（2026-09-18）：** 核心工程版已完成实际开发、联调与 Docker 部署。Python 独立项目位于 `D:/develop/intelligent-agent-runtime`，通过内部 HTTP 业务工具及 RabbitMQ 命令与原 Java/Vue 项目联动。已落地多空间权限、知识版本与引用、审批恢复、幂等预约、取消、规则评测、可观测及备份恢复；多 worker、300样本正式效果基准、OCR/reranker和MCP/多Agent实验仍有独立验收条件。实际数据以[开发与验证记录](./开发与验证记录.md)及[研发接口契约](./研发接口契约.md)为准。
 
 ## 1. 先给结论
 
@@ -156,9 +158,9 @@
 
 ### 4.4 版本升级策略
 
-截至调研日，[Spring AI 官方项目页](https://spring.io/projects/spring-ai/) 显示 2.0.1；[官方入门文档](https://docs.spring.io/spring-ai/reference/getting-started.html) 列出 2.0.x 对应 Boot 4.0.x/4.1.x，同时仍列出 1.1.8、1.0.9 稳定分支。因此不能直接把当前 Boot 3.5.3 项目的 Spring AI 改成 2.0.1。
+截至调研日，[Spring AI 官方项目页](https://spring.io/projects/spring-ai/) 显示 2.0.1；[官方入门文档](https://docs.spring.io/spring-ai/reference/getting-started.html) 明确 2.0.x 对应 Boot 4.0.x/4.1.x。本项目已成套升级到 Boot 4.1.1、Spring AI 2.0.1、MyBatis-Plus Boot 4 starter 3.5.17，JDK 保持 21。
 
-迁移基线先保留 Boot 3.5 系列，选择经过验证的维护版本与匹配的 Spring AI 1.1 系列；验证百炼兼容接口上的 `qwen3.7-flash`、`text-embedding-v4` / 1024 维、Redis/JDBC、流式取消和工具 schema 后再锁定 patch。DeepSeek 仅保留在旧版审计记录中，不作为目标配置的启动依赖。若未来升级 Boot 4，则单独检查 MyBatis starter、Jackson、Spring Security、MCP SDK 和 OSS 兼容性。纯 Java 备选必须按 [Spring AI Alibaba 官方兼容表](https://java2ai.com/docs/versions/) 配套 BOM，不混搭“各自最新”。
+迁移已适配 Jackson 3、MyBatis 服务包名、RedisClient、模型扁平配置和包含 `/v1` 的百炼兼容地址，并用 Flyway V4 保留旧聊天内容及顺序。独立副本的真实 Boot 启动、MySQL/Redis、注册登录、HTTP 业务接口、配置绑定和 SDK HTTP 协议验证均通过，详见 [Spring Boot 4 迁移与验证记录](SpringBoot4迁移与验证记录.md)。真实模型、Rabbit 消费和前端闭环以总体验收记录为准。DeepSeek 仅保留在旧版审计记录中，不作为目标配置的启动依赖。纯 Java 备选仍须按 [Spring AI Alibaba 官方兼容表](https://java2ai.com/docs/versions/) 配套 BOM。
 
 Python 依赖用 uv.lock，前端采用唯一包管理器与 lockfile，容器用具体标签/镜像摘要；LangGraph 与 checkpoint 插件分开记录版本。[LangGraph releases](https://github.com/langchain-ai/langgraph/releases) 是核对入口。文档不把 main 分支当稳定发布版，也不以 star 数排名代替工程选型。
 

@@ -32,9 +32,10 @@ import java.util.Objects;
 @Slf4j
 @Service
 @RequiredArgsConstructor
+@org.springframework.boot.autoconfigure.condition.ConditionalOnProperty(name = "app.legacy-ai-enabled", havingValue = "true")
 public class FileServiceImpl implements IFileService {
 
-    private static final long DEFAULT_USER_ID = 1L;
+
     private static final int VECTOR_STATUS_NOT_STORED = 0;
     private static final int VECTOR_STATUS_STORED = 1;
     private static final int VECTOR_STATUS_FAILED = 2;
@@ -67,6 +68,9 @@ public class FileServiceImpl implements IFileService {
             );
             String contentType = StringUtils.hasText(file.getContentType()) ? file.getContentType() : "application/pdf";
             byte[] content = file.getBytes();
+            if (content.length < 5 || !new String(content, 0, 5, java.nio.charset.StandardCharsets.US_ASCII).equals("%PDF-")) {
+                throw new IllegalArgumentException("文件内容不是PDF");
+            }
             OssUploadResult uploadResult = aliyunOSSOperator.upload(content, originalFilename, contentType, normalizedChatId);
 
             LocalDateTime now = LocalDateTime.now();
@@ -148,6 +152,7 @@ public class FileServiceImpl implements IFileService {
                 for (int chunkIndex = 0; chunkIndex < chunks.size(); chunkIndex++) {
                     Map<String, Object> metadata = new HashMap<>(pageDocument.getMetadata());
                     metadata.put("chat_id", chatId);
+                    metadata.put("user_id", String.valueOf(currentUserId()));
                     metadata.put("paragraph_index", paragraphIndex);
                     metadata.put("chunk_index", chunkIndex);
                     metadata.put("segment_index", segmentIndex++);
@@ -248,6 +253,6 @@ public class FileServiceImpl implements IFileService {
 
     private Long currentUserId() {
         UserDTO user = UserHolder.getUser();
-        return user == null || user.getId() == null ? DEFAULT_USER_ID : user.getId();
+        return UserHolder.requireUserId();
     }
 }

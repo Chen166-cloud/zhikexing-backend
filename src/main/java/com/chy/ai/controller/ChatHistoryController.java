@@ -20,6 +20,7 @@ import java.util.Map;
 @RestController
 @RequestMapping("/ai/history")
 @RequiredArgsConstructor
+@org.springframework.boot.autoconfigure.condition.ConditionalOnProperty(name = "app.legacy-ai-enabled", havingValue = "true")
 public class ChatHistoryController {
 
     private final ChatMemoryRepository chatMemoryRepository;

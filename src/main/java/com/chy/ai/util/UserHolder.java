@@ -16,6 +16,15 @@ public class UserHolder {
         return TL.get();
     }
 
+    public static long requireUserId() {
+        UserDTO user = TL.get();
+        if (user == null || user.getId() == null) {
+            throw new org.springframework.web.server.ResponseStatusException(
+                    org.springframework.http.HttpStatus.UNAUTHORIZED, "请先登录");
+        }
+        return user.getId();
+    }
+
     public static void removeUser() {
         TL.remove();
     }

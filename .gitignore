@@ -2,3 +2,7 @@
 /chat-pdf.json
 /chat-pdf.properties
 /.idea/
+/.env
+/backups/
+**/__pycache__/
+*.pyc

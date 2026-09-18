@@ -1,6 +1,6 @@
 # 模型服务与 API 配置
 
-决策日期：2026-09-18。状态：用户已确认，待研发实施。本文件记录目标配置；本次未修改源码、环境变量或调用计费接口，文档不保存真实密钥。
+决策日期：2026-09-18。状态：已接入 Java 与独立 Python 服务，并通过真实聊天及 1024 维 Embedding 冒烟。整链路验证结果持续记录在[开发与验证记录](./开发与验证记录.md)。文档不保存真实密钥。
 
 ## 1. 已确定的选型
 
@@ -20,11 +20,11 @@
 
 ## 2. 当前配置与目标配置
 
-当前后端 `application.yaml` 的聊天默认提供方为 DeepSeek，另有百炼兼容接口的 `qwen3.7-max` 配置；Embedding 已是 `text-embedding-v4` / 1024 维。当前百炼 Key 来自 Windows 系统环境变量 `API-KEY`。以上是迁移起点，不是目标版本已完成切换的证明。
+改造前后端以 DeepSeek 为聊天默认提供方，并有 `qwen3.7-max` 配置。改造后 Java 默认关闭旧 AI 入口，独立 Python 项目 `D:/develop/intelligent-agent-runtime` 统一读取 `qwen3.7-flash` 和 `text-embedding-v4` / 1024 维。当前百炼 Key 可继续来自已有 Windows 环境变量 `API-KEY`。
 
-目标统一使用规范环境变量名 `DASHSCOPE_API_KEY`，方便 Java、Python 与部署工具引用；实现阶段把现有百炼 Key 的值转移到该变量并同步修改应用引用，无须仅因更名申请第二把 Key。本次文档更新不会删除、更名或复制本机环境变量，也不影响其他项目的 DeepSeek 配置。
+规范环境变量名为 `DASHSCOPE_API_KEY`，Python 和 Java 保留 `API-KEY` 兼容读取。本机 Compose 通过当前进程将已有 Key 映射为规范名传入容器，没有删除系统中的旧变量，也无须申请第二把 Key。
 
-以下是目标配置约定示例，尚不是现有程序已经读取的配置项：
+以下配置已由现有程序读取；真实密钥只在服务端注入：
 
 ~~~dotenv
 DASHSCOPE_API_KEY=<your-bailian-api-key>

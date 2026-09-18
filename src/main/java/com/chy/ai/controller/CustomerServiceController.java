@@ -12,6 +12,7 @@ import reactor.core.publisher.Flux;
 
 @RestController
 @RequestMapping("/ai")
+@org.springframework.boot.autoconfigure.condition.ConditionalOnProperty(name = "app.legacy-ai-enabled", havingValue = "true")
 public class CustomerServiceController {
 
     private final ChatClient serviceChatClient;

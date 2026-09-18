@@ -1,0 +1,50 @@
+[
+  {
+    "image": "postgres:17.10-alpine",
+    "digests": "postgres@sha256:742f40ea20b9ff2ff31db5458d127452988a2164df9e17441e191f3b72252193"
+  },
+  {
+    "image": "rabbitmq:4.3.6-management",
+    "digests": "rabbitmq@sha256:de62d9901fb73aaa8767b9c1e9ea32f2938f69d1b83e430f7c5ca854081d2128"
+  },
+  {
+    "image": "docker.langfuse.com/langfuse/langfuse:4.38.0",
+    "digests": "docker.langfuse.com/langfuse/langfuse@sha256:47ef2f121e2959c8458c209d118949ade25778017e3f5b75b1e45f72276811c3"
+  },
+  {
+    "image": "prom/prometheus:v3.14.0",
+    "digests": "prom/prometheus@sha256:5ce7540c3c00ef4ab0c9d2c995c6a5b9c421f44b4a115d97a2c7af3b1c21cbb0"
+  },
+  {
+    "image": "cgr.dev/chainguard/minio@sha256:e7728e37a015dcd2f2b146abc4aedc0096769ac72cb64cc9ed36b7f4183361e1",
+    "digests": "cgr.dev/chainguard/minio@sha256:e7728e37a015dcd2f2b146abc4aedc0096769ac72cb64cc9ed36b7f4183361e1"
+  },
+  {
+    "image": "redis:8.2.1-alpine",
+    "digests": "redis@sha256:987c376c727652f99625c7d205a1cba3cb2c53b92b0b62aade2bd48ee1593232"
+  },
+  {
+    "image": "otel/opentelemetry-collector-contrib:0.161.0",
+    "digests": "otel/opentelemetry-collector-contrib@sha256:fd328de2552466ad78385e1b1289c3f2402b1c45f265b252aab1955b42845ac1"
+  },
+  {
+    "image": "clickhouse/clickhouse-server:25.12",
+    "digests": "clickhouse/clickhouse-server@sha256:8a790dd3468db22b1d4e7b18a176f378ff5ff6053b9c48dd4ea1fa71a24c5ba6"
+  },
+  {
+    "image": "docker.langfuse.com/langfuse/langfuse-worker:4.38.0",
+    "digests": "docker.langfuse.com/langfuse/langfuse-worker@sha256:8631cf429efc4a2981d4e6ced4c005b9f6f620a4e34625baf60152301ec6d006"
+  },
+  {
+    "image": "mysql:8.4.8",
+    "digests": "mysql@sha256:2952e3be7807f06fc18de50b3ea1a632d5c70d63482ff7d7376fe3aa8999babf"
+  },
+  {
+    "image": "pgvector/pgvector:0.8.5-pg17",
+    "digests": "pgvector/pgvector@sha256:d2ef61f42ef767baa5a1475393303cc235bcd92febd9d7014eddb48b41f3bad0"
+  },
+  {
+    "image": "grafana/grafana:13.2.2",
+    "digests": "grafana/grafana@sha256:ac461fb352abc50da10a51c7d02462e9c05488f11f53f14b3ad79a8145f638a0"
+  }
+]

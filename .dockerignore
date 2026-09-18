@@ -1,0 +1,15 @@
+.git
+.idea
+.claude
+.env
+.env.*
+!.env.example
+target
+agent-runtime
+docs
+deploy
+backups
+*.pdf
+chat-pdf.*
+**/__pycache__
+**/.venv

@@ -9,10 +9,10 @@
 		<relativePath/> <!-- lookup parent from repository -->
 	</parent>
 	<groupId>com.chy</groupId>
-	<artifactId>intelligent-integrated-interaction-platform</artifactId>
+	<artifactId>zhikexing-backend</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
-	<name>intelligent-integrated-interaction-platform</name>
-	<description>Intelligent Integrated Interaction Platform</description>
+	<name>zhikexing-backend</name>
+	<description>知课行 · AI 课程服务平台后端</description>
 	<url/>
 	<licenses>
 		<license/>

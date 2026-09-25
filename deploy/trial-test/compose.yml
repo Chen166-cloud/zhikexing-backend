@@ -1,11 +1,11 @@
 # Isolated disposable verification environment; no application volumes or credentials.
-name: iiip-trial-test
+name: zhikexing-trial-test
 services:
   mysql:
     image: mysql:8.4.8
     environment:
       MYSQL_ROOT_PASSWORD: trial-test-only
-      MYSQL_DATABASE: iiip_trial_test
+      MYSQL_DATABASE: zhikexing_trial_test
     ports: ["127.0.0.1:23306:3306"]
     tmpfs: [/var/lib/mysql]
     healthcheck:
@@ -27,5 +27,5 @@ services:
     depends_on: [nameserver]
     environment: {JAVA_OPT_EXT: "-Xms256m -Xmx256m -Xmn128m"}
     command: sh mqbroker -c /home/rocketmq/broker.conf
-    ports: ["127.0.0.1:10911:10911", "127.0.0.1:10909:10909"]
+    ports: ["127.0.0.1:20911:20911", "127.0.0.1:20909:20909"]
     volumes: ["./broker.conf:/home/rocketmq/broker.conf:ro"]

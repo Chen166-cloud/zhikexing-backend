@@ -1,4 +1,4 @@
-param([string]$Distribution = $env:IIIP_WSL_DISTRIBUTION)
+param([string]$Distribution = $env:ZHIKEXING_WSL_DISTRIBUTION)
 $ErrorActionPreference = 'Stop'
 if (-not $Distribution) {
     # 未指定时采用开发者自己的默认发行版。
@@ -11,7 +11,7 @@ $distributionPattern = '(?:-d|--distribution)\s+"?' + [regex]::Escape($Distribut
 $keepAlive = Get-CimInstance Win32_Process -Filter "Name = 'wsl.exe'" |
     Where-Object { $_.CommandLine -match $distributionPattern -and $_.CommandLine -like '*--exec /bin/sleep infinity*' }
 if (-not $keepAlive) {
-    Start-Process -FilePath wsl.exe -ArgumentList @('--distribution', "`"$Distribution`"", '--user', 'root', '--exec', '/bin/sleep', 'infinity') -WindowStyle Hidden
+    Start-Process -FilePath wsl.exe -ArgumentList @('--distribution', $Distribution, '--user', 'root', '--exec', '/bin/sleep', 'infinity') -WindowStyle Hidden
 }
 & wsl --distribution $Distribution --user root --exec systemctl start docker
 if ($LASTEXITCODE -ne 0) { throw 'WSL Docker Engine 启动失败。' }

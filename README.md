@@ -1,40 +1,42 @@
-# Intelligent Integrated Interaction Platform
+# 知课行 · AI 课程服务平台
 
-面向课程咨询与知识问答的 Agent 工程项目。Vue 展示执行过程与审批，Java 掌握业务权限和预约事务，独立 Python 服务运行可恢复的 LangGraph 任务。默认通过一把百炼 Key 使用 `qwen3.7-flash` 和 `text-embedding-v4`（1024 维）。
+知课行面向课程咨询、知识问答、预约意向和热门课程免费试听。用户从登录页进入产品首页，再到 Agent 工作台查看资料引用、审批草稿和办理结果；Vue 展示过程，Java 掌握身份、库存与订单，独立 Python 服务运行可恢复的 LangGraph 任务。真实模型模式通过一把百炼 Key 使用 `qwen3.7-flash` 和 `text-embedding-v4`（1024 维）；完整 Compose 联调使用 fixture 模型。
+
+「知课行」是当前网站与产品展示名。Java Maven 模块为 `zhikexing-backend`，Python 包为 `zhikexing_agent`，Vue npm 包为 `zhikexing-web`。三个项目副本的 Git `origin` 分别指向对应的知课行 Gitee 地址；Compose 默认使用知课行命名的三个同级目录。
 
 ## 三个独立项目
 
-| 项目 | Git 仓库 | 职责 |
-|---|---|---|
-| Java 后端（本仓库） | [intelligent-integrated-interaction-platform](https://gitee.com/chy66666/intelligent-integrated-interaction-platform.git) | 登录、空间成员、对外 API、审批、业务幂等与 outbox |
-| Python：intelligent-agent-runtime | [intelligent-agent-runtime](https://gitee.com/chy66666/intelligent-agent-runtime.git) | LangGraph、checkpoint、事件、知识库、模型适配与评测 |
-| Vue 前端 | [web-intelligent-integrated-interaction-platform](https://gitee.com/chy66666/web-intelligent-integrated-interaction-platform.git) | 工作台、SSE、审批卡、引用预览、知识与评测管理 |
+| 项目 | 同级目录 | 当前远程仓库 | 职责 |
+|---|---|---|---|
+| Java 后端（本仓库） | `zhikexing-backend` | [Git 仓库](https://gitee.com/chy66666/zhikexing-backend.git) | 登录、空间成员、对外 API、审批、业务幂等与 outbox |
+| Python Agent 服务 | `zhikexing-agent-runtime` | [Git 仓库](https://gitee.com/chy66666/zhikexing-agent-runtime.git) | LangGraph、checkpoint、事件、知识库、模型适配与评测 |
+| Vue 前端 | `zhikexing-web` | [Git 仓库](https://gitee.com/chy66666/zhikexing-web.git) | 知课行登录/注册、产品首页、工作台、免费试听、SSE、审批卡与知识评测 |
 
 Python 是独立目录、独立依赖和独立 Docker 镜像，通过服务接口联动。统一部署由本仓库 Compose 管理，外部项目路径通过 `AGENT_RUNTIME_PATH`、`FRONTEND_PATH` 配置。
 
 在任意开发目录下将三个仓库克隆为同级目录，默认配置即可找到构建上下文：
 
 ```sh
-git clone https://gitee.com/chy66666/intelligent-integrated-interaction-platform.git
-git clone https://gitee.com/chy66666/intelligent-agent-runtime.git
-git clone https://gitee.com/chy66666/web-intelligent-integrated-interaction-platform.git
-cd intelligent-integrated-interaction-platform
+git clone git@gitee.com:chy66666/zhikexing-backend.git zhikexing-backend
+git clone git@gitee.com:chy66666/zhikexing-agent-runtime.git zhikexing-agent-runtime
+git clone git@gitee.com:chy66666/zhikexing-web.git zhikexing-web
+cd zhikexing-backend
 ```
 
 ```text
 任意开发目录/
-├── intelligent-integrated-interaction-platform/
-├── intelligent-agent-runtime/
-└── web-intelligent-integrated-interaction-platform/
+├── zhikexing-backend/
+├── zhikexing-agent-runtime/
+└── zhikexing-web/
 ```
 
-Compose 默认使用 `../intelligent-agent-runtime` 和 `../web-intelligent-integrated-interaction-platform`，相对于本仓库根目录解析。若目录布局不同，在本机未提交的 `.env` 中设置这两个变量；不需要修改源码，也不要提交其他机器无法访问的绝对路径。现有 `.env` 不会被初始化脚本覆盖。
+Compose 默认使用 `../zhikexing-agent-runtime` 和 `../zhikexing-web`，相对于本仓库根目录解析。若目录布局不同，在本机未提交的 `.env` 中设置 `AGENT_RUNTIME_PATH` 和 `FRONTEND_PATH`；不需要修改源码，也不要提交其他机器无法访问的绝对路径。现有 `.env` 不会被初始化脚本覆盖。
 
 ## 业务闭环
 
-新增[免费试听名额秒杀与 Agent 联动模块](docs/modules/免费试听秒杀与Agent联动.md)：用户或已获批准的 Agent 参与限量活动，RocketMQ 事务回调通过 Redis Lua 预占名额，消费者异步创建 0 元试听订单。持久请求、MySQL 条件库存和唯一约束支持重试恢复；受理回执不代表抢课成功。研究依据及[隔离验证记录](docs/modules/免费试听秒杀验证记录.md)区分已实现能力与待验证性能。
+[免费试听名额秒杀与 Agent 联动模块](docs/modules/免费试听秒杀与Agent联动.md)在 `/agent` 工作台提供“免费试听”标签：成员浏览活动、直接抢课并查看本人持久参与记录，刷新或换设备后可继续追踪；空间 OWNER 选择课程和校区，创建、发布、暂停活动并查看对账。用户也可在对话中批准 Agent 的试听申请草稿。RocketMQ 事务回调通过 Redis Lua 预占名额，消费者异步创建 0 元试听订单。持久请求、MySQL 条件库存和唯一约束支持重试恢复；HTTP 202 仅表示受理，只有请求最终 `SUCCEEDED` 且有 `orderId` 才表示抢到名额。[验证记录](docs/modules/免费试听秒杀验证记录.md)列出实测范围。
 
-截至 2026-09-25：三个仓库的代码与 Compose 配置使用 RocketMQ，隔离环境真实中间件和跨服务联调通过；平时使用的完整 Compose 应用尚未按新配置重建、启动并验收。升级既有环境前需盘点并处理遗留队列消息。本机用于部署的 Ubuntu WSL 检查时为停止状态。下文启动命令是新版操作步骤，不表示已在常用部署执行。
+验证边界（2026-09-26）：隔离 MySQL 8.4.8 的 Flyway V1–V7 迁移与雪花主键业务集成、Java 单测及前端构建通过；隔离真实 Redis/RocketMQ 的 15+3 项测试通过。知课行完整 Compose 已健康启动，`Verify-Compose.ps1` 在真实 MySQL、Redis、RocketMQ、Java、Python 与 fixture 模型下完成直接抢课和 Agent 审批落单。Playwright CLI 经真实 8088 入口完成注册、登录、首页、Agent 工作台及试听页面操作，控制台没有错误。真实百炼模型、真实 API 下 MEMBER 权限与浏览器内 Agent 审批、跨设备和网络故障仍未验收；隔离并发测试不代表生产吞吐。
 
 1. 上传 PDF/TXT/Markdown，原文件存入 MinIO，异步解析、切块和向量化，完整版本发布后才参与检索。
 2. Agent 查询授权知识库、课程和校区，展示检索证据与工具结果。
@@ -44,7 +46,7 @@ Compose 默认使用 `../intelligent-agent-runtime` 和 `../web-intelligent-inte
 
 ```mermaid
 flowchart LR
-    Vue[Vue 工作台] --> Java[Java API / 业务工具]
+    Vue[Vue 工作台 / 试听活动页面] --> Java[Java API / 业务工具]
     Java --> MySQL[(MySQL / 审批 / Outbox)]
     MySQL --> Relay[Outbox Relay]
     Relay --> MQ[RocketMQ]
@@ -61,6 +63,7 @@ flowchart LR
 ## 技术与工程约束
 
 - Java 21、Spring Boot 4.1.1、Spring AI 2.0.1、MyBatis-Plus 3.5.17、Flyway；Redis 登录态、BCrypt 密码渐进升级。
+- MySQL 业务表的新写入主键采用应用生成的雪花 ID，默认单实例节点号 0；多 Java 写入实例须配置互不冲突的 `SNOWFLAKE_NODE_ID`（0–1022，1023 留给迁移与演示数据）。Flyway V1–V7 管理业务结构，聊天记录和 PDF 文件表名分别为 `zhikexing_chat_record`、`zhikexing_pdf_file`；应用表不设物理外键，服务层校验逻辑关联，数据库唯一键与事务约束保留。
 - Python 3.13、FastAPI、LangGraph、PostgreSQL checkpoint、pgvector；通过 HTTP 幂等接收运行命令。
 - Vue 3、TypeScript、Pinia、Naive UI；可取消、按事件序号恢复的 SSE。
 - RocketMQ 5.5.1 原生 Java client、持久化 outbox 和消费去重。Java 桥接消费者在 Python Run/取消状态事务落盘后确认，允许重复投递；业务唯一约束保证同一 actionId 只生成一笔预约。免费试听使用独立的事务消息 Topic：半消息 → Lua 预占 Redis → commit → 异步落单。
@@ -73,17 +76,17 @@ flowchart LR
 
 完整安装、端口、环境变量、备份恢复与故障处理见 [Docker 部署文档](docs/deployment/Docker部署文档.md)。支持 Docker Desktop、Linux Docker Engine 或 WSL 内 Docker Engine，仓库不依赖固定盘符、用户名或 WSL 数据目录。
 
-以下命令在 Java 仓库根目录的 PowerShell 7 中运行，示例使用 WSL Docker Engine。已有 `.env` 不重复初始化；WSL 默认使用系统默认发行版，可通过 `IIIP_WSL_DISTRIBUTION` 选择已安装的发行版：
+以下命令在 Java 仓库根目录的 PowerShell 7 中运行，示例使用 WSL Docker Engine。已有 `.env` 不重复初始化；WSL 默认使用系统默认发行版，可通过 `ZHIKEXING_WSL_DISTRIBUTION` 选择已安装的发行版：
 
 ```powershell
 .\deploy\Start-WslEngine.ps1
+# 仅首次初始化；已有 .env 时跳过。
 .\deploy\Initialize-Environment.ps1 -Wsl
-# 兼容已有 Windows 环境变量；只在当前进程映射，不显示 Key。
-$env:DASHSCOPE_API_KEY = [Environment]::GetEnvironmentVariable('API-KEY')
-.\deploy\Compose.ps1 -Wsl --profile app --profile observability up -d --build
+$env:AI_PROVIDER = 'fixture'
+.\deploy\Compose.ps1 -Wsl --profile app --profile observability up -d --build --wait
 ```
 
-如果已经使用规范变量 `DASHSCOPE_API_KEY`，跳过映射步骤。真实凭据保留在环境与被 Git 忽略的本地 `.env`；Vue 不读取模型密钥。数据库和内部服务凭据与模型 Key 分开管理。
+上述 fixture 模式用于可复现的完整业务联调；也可在本机未提交的 `.env` 持久设置 `AI_PROVIDER=fixture` 并省略临时 PowerShell 赋值。`Compose.ps1 -Wsl` 只转发当前 PowerShell 进程中非空的覆盖变量，避免空变量遮蔽 `.env`。MySQL、Redis、RocketMQ、Java/Python 与 Nginx 仍连接真实容器。接入百炼时改设 `AI_PROVIDER=bailian`，提供 `DASHSCOPE_API_KEY` 后重建 Runtime；Vue 不读取模型密钥。真实凭据保留在环境与被 Git 忽略的本地 `.env`，数据库和内部服务凭据与模型 Key 分开管理。
 
 Docker Desktop 使用同一初始化脚本，跳过 `Start-WslEngine.ps1`，Compose 包装命令去掉 `-Wsl`。Linux 开发者可使用 PowerShell 7 初始化配置，再在仓库根目录直接执行 `docker compose --profile app --profile observability up -d --build`。
 
@@ -91,23 +94,25 @@ Docker Desktop 使用同一初始化脚本，跳过 `Start-WslEngine.ps1`，Comp
 
 | 服务 | 本机地址 |
 |---|---|
-| 工作台 | http://localhost:8088/agent |
+| 知课行登录 / 注册 | http://localhost:8088/login · http://localhost:8088/register |
+| 产品首页（登录后） | http://localhost:8088/ |
+| Agent 工作台（含“免费试听”标签） | http://localhost:8088/agent |
 | Java API | http://localhost:18080 |
 | Java 健康检查 | 容器内 `http://localhost:8081/actuator/health`，管理端口不映射到宿主机 |
 | Python 健康检查 | http://localhost:18000/health |
 
 在宿主机检查 Java 健康状态：`.\deploy\Compose.ps1 -Wsl exec -T backend curl -fsS http://localhost:8081/actuator/health`，返回 `status: UP`。不要将容器内管理端口当作宿主机 18081 访问。
 
-旧 Spring AI 聊天、客服和游戏代码默认关闭（`LEGACY_AI_ENABLED=false`），旧入口返回迁移提示。新主线不需要 DeepSeek Key，也不依赖旧 Redis 向量索引。旧数据库不自动复制到演示数据库，数据迁移需先备份并按部署文档执行。
+导入演示课程与校区后，可运行 `.\deploy\Verify-Compose.ps1` 复验经 8088 Nginx 的直接抢课和 Agent fixture 审批落单；导入命令与数据保留范围见 [Docker 部署文档](docs/deployment/Docker部署文档.md)。
 
 ## 开发与验证
 
 - Java：JDK 21 下执行 `mvn -q -DskipTests package`。
-- Python：进入独立项目，按其 README 创建虚拟环境、安装 `requirements.lock`，执行 `python -m iiip_agent`。
+- Python：进入独立项目，按其 README 创建虚拟环境、安装 `requirements.lock`，执行 `python -m zhikexing_agent`。
 - Vue：进入前端项目，执行 `npm ci`、`npm run build`，本机开发代理指向 Java。
 - 真实接口与约束见 [研发接口契约](docs/upgrade-plan/研发接口契约.md)。
 
-[开发与验证记录](docs/upgrade-plan/开发与验证记录.md) 和 [Docker 部署验证记录](docs/deployment/Docker部署验证记录.md) 只列新版可复核结果与尚未完成的整体验收。测试结果不是线上业务规模或效果宣传；专项回归测试作为持续验证保留。
+[开发与验证记录](docs/upgrade-plan/开发与验证记录.md) 和 [Docker 部署验证记录](docs/deployment/Docker部署验证记录.md) 列出当前可复核结果与未覆盖的真实模型、MEMBER/Agent 浏览器操作、跨设备、故障恢复及容量范围。测试结果不是线上业务规模或效果宣传；专项回归测试作为持续验证保留。
 
 试听秒杀与消息投递回归保留在 Java/Python 测试目录，并接入 CI；复现命令见[试听模块验证记录](docs/modules/免费试听秒杀验证记录.md)。
 

@@ -21,7 +21,7 @@ jobs:
           distribution: temurin
           java-version: '21'
           cache: maven
-      # 原仓库有计费集成测试；构建流水线不注入模型凭据，不自动执行它们。
+      # 构建流水线不注入模型凭据，不执行需要外部模型的计费测试。
       - name: 编译与打包
         run: mvn --batch-mode --no-transfer-progress -DskipTests verify
       - name: 非计费协议回归
@@ -31,7 +31,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 20
     env:
-      TRIAL_TEST_MYSQL_URL: jdbc:mysql://127.0.0.1:23306/iiip_trial_test?allowPublicKeyRetrieval=true&useSSL=false&serverTimezone=UTC
+      TRIAL_TEST_MYSQL_URL: jdbc:mysql://127.0.0.1:23306/zhikexing_trial_test?allowPublicKeyRetrieval=true&useSSL=false&serverTimezone=UTC
       TRIAL_TEST_ROCKETMQ: 'true'
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
@@ -43,8 +43,8 @@ jobs:
       - name: 启动隔离中间件并创建测试主题
         run: |
           docker compose -f deploy/trial-test/compose.yml up -d --wait
-          docker compose -f deploy/trial-test/compose.yml exec -T broker sh mqadmin updateTopic -n nameserver:9876 -b 127.0.0.1:10911 -t iiip_trial_claims -a +message.type=TRANSACTION
-          docker compose -f deploy/trial-test/compose.yml exec -T broker sh mqadmin updateTopic -n nameserver:9876 -b 127.0.0.1:10911 -t iiip-agent-bridge-test -a +message.type=NORMAL
+          docker compose -f deploy/trial-test/compose.yml exec -T broker sh mqadmin updateTopic -n nameserver:9876 -c TrialTestCluster -t zhikexing_trial_claims -r 4 -w 4 -a +message.type=TRANSACTION
+          docker compose -f deploy/trial-test/compose.yml exec -T broker sh mqadmin updateTopic -n nameserver:9876 -c TrialTestCluster -t zhikexing-agent-bridge-test -r 4 -w 4 -a +message.type=NORMAL
       - name: 真实库存与消息恢复回归（无模型调用）
         run: mvn --batch-mode --no-transfer-progress -Dtest=TrialProtocolTest,TrialIntegrationTest,RocketMqBridgeIntegrationTest test
       - name: 保留测试报告

@@ -1,7 +1,7 @@
 apiVersion: 1
 providers:
-  - name: IIIP
-    folder: IIIP
+  - name: Zhikexing
+    folder: 知课行
     type: file
     options:
       path: /var/lib/grafana/dashboards

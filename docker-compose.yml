@@ -1,4 +1,4 @@
-name: iiip-agent
+name: zhikexing
 
 # 默认启动核心数据服务；observability 增加完整观测依赖，app 增加应用。
 x-langfuse-env: &langfuse-env
@@ -53,14 +53,14 @@ services:
     restart: unless-stopped
     environment:
       MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
-      MYSQL_DATABASE: iiip
-      MYSQL_USER: iiip
+      MYSQL_DATABASE: zhikexing
+      MYSQL_USER: zhikexing
       MYSQL_PASSWORD: ${MYSQL_PASSWORD}
       TZ: Asia/Shanghai
     ports: ["127.0.0.1:${MYSQL_PORT:-13306}:3306"]
     volumes: ["mysql-data:/var/lib/mysql"]
     healthcheck:
-      test: [CMD-SHELL, 'MYSQL_PWD="$${MYSQL_PASSWORD}" mysql -h 127.0.0.1 -uiiip iiip -e "SELECT 1" >/dev/null']
+      test: [CMD-SHELL, 'MYSQL_PWD="$${MYSQL_PASSWORD}" mysql -h 127.0.0.1 -uzhikexing zhikexing -e "SELECT 1" >/dev/null']
       interval: 10s
       timeout: 5s
       retries: 30
@@ -69,15 +69,15 @@ services:
     image: pgvector/pgvector:0.8.5-pg17
     restart: unless-stopped
     environment:
-      POSTGRES_DB: iiip_agent
-      POSTGRES_USER: iiip
+      POSTGRES_DB: zhikexing_agent
+      POSTGRES_USER: zhikexing
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
     ports: ["127.0.0.1:${POSTGRES_PORT:-15432}:5432"]
     volumes:
       - postgres-data:/var/lib/postgresql/data
       - ./deploy/postgres/001-vector.sql:/docker-entrypoint-initdb.d/001-vector.sql:ro
     healthcheck:
-      test: [CMD-SHELL, "pg_isready -U iiip -d iiip_agent"]
+      test: [CMD-SHELL, "pg_isready -U zhikexing -d zhikexing_agent"]
       interval: 5s
       timeout: 5s
       retries: 20
@@ -108,12 +108,21 @@ services:
       timeout: 5s
       retries: 20
 
+  rocketmq-volume-init:
+    image: apache/rocketmq:5.5.0@sha256:7e8f6c9dbd9df742ed26ba69c00d4ad69e2f86a56f3ca7782ff8144dd0798132
+    user: "0:0"
+    entrypoint: [sh, -ec, "chown -R 3000:3000 /home/rocketmq/store /home/rocketmq/logs"]
+    volumes:
+      - rocketmq-store:/home/rocketmq/store
+      - rocketmq-logs:/home/rocketmq/logs
+
   rocketmq-broker:
     image: apache/rocketmq:5.5.0@sha256:7e8f6c9dbd9df742ed26ba69c00d4ad69e2f86a56f3ca7782ff8144dd0798132
     hostname: rocketmq-broker
     restart: unless-stopped
     depends_on:
       rocketmq-nameserver: {condition: service_healthy}
+      rocketmq-volume-init: {condition: service_completed_successfully}
     environment:
       NAMESRV_ADDR: rocketmq-nameserver:9876
       JAVA_OPT_EXT: -Xms256m -Xmx512m -Xmn128m
@@ -122,9 +131,9 @@ services:
       - sh
       - -c
       - >-
-        cp /etc/rocketmq/broker.conf /tmp/iiip-broker.conf &&
-        printf '\nbrokerIP1=%s\n' "$$BROKER_ADVERTISED_HOST" >> /tmp/iiip-broker.conf &&
-        exec sh mqbroker -c /tmp/iiip-broker.conf
+        cp /etc/rocketmq/broker.conf /tmp/zhikexing-broker.conf &&
+        printf '\nbrokerIP1=%s\n' "$$BROKER_ADVERTISED_HOST" >> /tmp/zhikexing-broker.conf &&
+        exec sh mqbroker -c /tmp/zhikexing-broker.conf
     ports: ["127.0.0.1:10911:10911", "127.0.0.1:10909:10909"]
     volumes:
       - rocketmq-store:/home/rocketmq/store
@@ -172,7 +181,7 @@ services:
     command:
       - |
         mc alias set local http://minio:9000 "$$S3_ACCESS_KEY_ID" "$$S3_SECRET_ACCESS_KEY" >/dev/null
-        mc mb --ignore-existing local/iiip-documents local/langfuse
+        mc mb --ignore-existing local/zhikexing-documents local/langfuse
 
   langfuse-postgres:
     image: postgres:17.10-alpine
@@ -237,14 +246,14 @@ services:
       HOSTNAME: 0.0.0.0
       LANGFUSE_S3_MEDIA_UPLOAD_ENDPOINT: ${S3_PUBLIC_URL:-http://localhost:19000}
       LANGFUSE_S3_MEDIA_UPLOAD_INTERNAL_ENDPOINT: http://minio:9000
-      LANGFUSE_INIT_ORG_ID: iiip
-      LANGFUSE_INIT_ORG_NAME: IIIP
-      LANGFUSE_INIT_PROJECT_ID: iiip-agent
-      LANGFUSE_INIT_PROJECT_NAME: IIIP Agent
+      LANGFUSE_INIT_ORG_ID: zhikexing
+      LANGFUSE_INIT_ORG_NAME: 知课行
+      LANGFUSE_INIT_PROJECT_ID: zhikexing-agent
+      LANGFUSE_INIT_PROJECT_NAME: 知课行 Agent
       LANGFUSE_INIT_PROJECT_PUBLIC_KEY: ${LANGFUSE_PUBLIC_KEY}
       LANGFUSE_INIT_PROJECT_SECRET_KEY: ${LANGFUSE_SECRET_KEY}
-      LANGFUSE_INIT_USER_EMAIL: ${LANGFUSE_ADMIN_EMAIL:-admin@iiip.local}
-      LANGFUSE_INIT_USER_NAME: IIIP Admin
+      LANGFUSE_INIT_USER_EMAIL: ${LANGFUSE_ADMIN_EMAIL:-admin@zhikexing.local}
+      LANGFUSE_INIT_USER_NAME: 知课行 Admin
       LANGFUSE_INIT_USER_PASSWORD: ${LANGFUSE_ADMIN_PASSWORD}
     ports: ["127.0.0.1:${LANGFUSE_PORT:-13000}:3000"]
     healthcheck:
@@ -311,13 +320,14 @@ services:
       redis: {condition: service_healthy}
       rocketmq-init: {condition: service_completed_successfully}
     environment:
-      DB_URL: jdbc:mysql://mysql:3306/iiip?serverTimezone=Asia/Shanghai&useUnicode=true&characterEncoding=utf-8&allowPublicKeyRetrieval=true&useSSL=false
-      DB_USERNAME: iiip
+      DB_URL: jdbc:mysql://mysql:3306/zhikexing?serverTimezone=Asia/Shanghai&useUnicode=true&characterEncoding=utf-8&allowPublicKeyRetrieval=true&useSSL=false
+      DB_USERNAME: zhikexing
       DB_PASSWORD: ${MYSQL_PASSWORD}
       REDIS_HOST: redis
       REDIS_PORT: "6379"
       REDIS_PASSWORD: ${REDIS_PASSWORD}
       ROCKETMQ_ENABLED: ${ROCKETMQ_ENABLED:-true}
+      SNOWFLAKE_NODE_ID: ${SNOWFLAKE_NODE_ID:-0}
       ROCKETMQ_NAME_SERVER: rocketmq-nameserver:9876
       AGENT_RUNTIME_URL: http://agent-runtime:8000
       AGENT_INTERNAL_TOKEN: ${AGENT_INTERNAL_TOKEN}
@@ -335,15 +345,15 @@ services:
       retries: 30
 
   agent-runtime:
-    image: ${AGENT_RUNTIME_IMAGE:-iiip-agent-agent-runtime:latest}
-    build: ${AGENT_RUNTIME_PATH:-../intelligent-agent-runtime}
+    image: ${AGENT_RUNTIME_IMAGE:-zhikexing-agent-runtime:latest}
+    build: ${AGENT_RUNTIME_PATH:-../zhikexing-agent-runtime}
     profiles: [app]
     restart: unless-stopped
     depends_on:
       postgres: {condition: service_healthy}
       minio-init: {condition: service_completed_successfully}
     environment:
-      AGENT_DATABASE_URL: postgresql+psycopg://iiip:${POSTGRES_PASSWORD}@postgres:5432/iiip_agent
+      AGENT_DATABASE_URL: postgresql+psycopg://zhikexing:${POSTGRES_PASSWORD}@postgres:5432/zhikexing_agent
       AGENT_INTERNAL_TOKEN: ${AGENT_INTERNAL_TOKEN}
       JAVA_TOOL_BASE_URL: http://backend:8080
       DASHSCOPE_API_KEY: ${DASHSCOPE_API_KEY:-}
@@ -359,7 +369,7 @@ services:
       S3_ENDPOINT_URL: http://minio:9000
       S3_ACCESS_KEY_ID: ${S3_ACCESS_KEY_ID}
       S3_SECRET_ACCESS_KEY: ${S3_SECRET_ACCESS_KEY}
-      S3_BUCKET: iiip-documents
+      S3_BUCKET: zhikexing-documents
       LANGFUSE_BASE_URL: http://langfuse-web:3000
       LANGFUSE_PUBLIC_KEY: ${LANGFUSE_PUBLIC_KEY}
       LANGFUSE_SECRET_KEY: ${LANGFUSE_SECRET_KEY}
@@ -374,7 +384,7 @@ services:
 
   frontend:
     build:
-      context: ${FRONTEND_PATH:-../web-intelligent-integrated-interaction-platform}
+      context: ${FRONTEND_PATH:-../zhikexing-web}
       dockerfile_inline: |
         FROM node:22.18.0-alpine AS build
         WORKDIR /app

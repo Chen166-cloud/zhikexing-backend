@@ -13,8 +13,8 @@ rocketmq_container=$(docker compose ps -q rocketmq-broker)
 agent_container=$(docker compose --profile app ps -q agent-runtime)
 docker compose --profile app stop frontend backend agent-runtime
 trap 'docker compose start --wait minio rocketmq-broker; docker compose --profile app start --wait backend agent-runtime frontend' EXIT
-docker compose exec -T mysql sh -c 'MYSQL_PWD="$MYSQL_PASSWORD" mysqldump -uiiip --single-transaction --no-tablespaces iiip' > "$backup_dir/mysql.sql"
-docker compose exec -T postgres pg_dump -U iiip -d iiip_agent -Fc > "$backup_dir/agent.dump"
+docker compose exec -T mysql sh -c 'MYSQL_PWD="$MYSQL_PASSWORD" mysqldump -uzhikexing --single-transaction --no-tablespaces zhikexing' > "$backup_dir/mysql.sql"
+docker compose exec -T postgres pg_dump -U zhikexing -d zhikexing_agent -Fc > "$backup_dir/agent.dump"
 docker compose exec -T redis sh -c 'REDISCLI_AUTH="$REDIS_PASSWORD" redis-cli SAVE' >/dev/null
 docker compose exec -T redis cat /data/dump.rdb > "$backup_dir/redis.rdb"
 # Broker 中尚未进入 inbox 的消息也是业务状态，停 Broker 后备份其命名卷。

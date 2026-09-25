@@ -16,7 +16,7 @@ $workspace = @($workspaces | Where-Object { $_.role -eq 'OWNER' })[0].id
 $prefix = "/api/v1/workspaces/$workspace/trials"
 function New-Campaign([string]$Title) {
     $value = Call-Api POST "$prefix/campaigns" @{
-        title=$Title;courseId='10001';schoolId='10001';capacity=2
+        title=$Title;courseId='220331822288990210';schoolId='220331822288990212';capacity=2
         startsAt=[DateTimeOffset]::UtcNow.AddSeconds(-5).ToString('o')
         endsAt=[DateTimeOffset]::UtcNow.AddMinutes(30).ToString('o')
     }

@@ -1,6 +1,6 @@
 spring:
   application:
-    name: intelligent-integrated-interaction-platform
+    name: zhikexing-backend
   task:
     scheduling:
       pool:
@@ -26,11 +26,11 @@ spring:
       type: custom
       redis:
         initialize-schema: false
-        index-name: iiip-pdf-secure-index
-        prefix: 'iiip:pdf:secure:'
+        index-name: zhikexing-pdf-secure-index
+        prefix: 'zhikexing:pdf:secure:'
   datasource:
     driver-class-name: ${DB_DRIVER:com.mysql.cj.jdbc.Driver}
-    url: ${DB_URL:jdbc:mysql://localhost:3306/iiip_agent?serverTimezone=Asia/Shanghai&useUnicode=true&characterEncoding=utf-8&allowPublicKeyRetrieval=true&useSSL=false}
+    url: ${DB_URL:jdbc:mysql://localhost:3306/zhikexing?serverTimezone=Asia/Shanghai&useUnicode=true&characterEncoding=utf-8&allowPublicKeyRetrieval=true&useSSL=false}
     username: ${DB_USERNAME:root}
     password: ${DB_PASSWORD:}
   flyway:
@@ -53,6 +53,9 @@ spring:
 server:
   port: ${SERVER_PORT:8080}
 app:
+  ids:
+    # Assign a distinct value to every running Java instance (0-1022); 1023 is reserved for migrations.
+    node-id: ${SNOWFLAKE_NODE_ID:0}
   legacy-ai-enabled: ${LEGACY_AI_ENABLED:false}
   cors-origins: ${CORS_ORIGINS:http://localhost:5173,http://127.0.0.1:5173,http://localhost:5176,http://127.0.0.1:5176,http://localhost:8088,http://127.0.0.1:8088}
   agent:
@@ -67,7 +70,7 @@ aliyun:
 logging:
   level:
     org.springframework.ai: WARN
-    com.chy.ai: INFO
+    com.chy.zhikexing: INFO
 management:
   server:
     port: ${MANAGEMENT_PORT:8081}
@@ -78,6 +81,6 @@ management:
 rocketmq:
   name-server: ${ROCKETMQ_NAME_SERVER:127.0.0.1:9876}
   agent:
-    topic: iiip-agent-commands
-    producer-group: iiip-agent-command-producer
-    consumer-group: iiip-agent-command-consumer
+    topic: zhikexing-agent-commands
+    producer-group: zhikexing-agent-command-producer
+    consumer-group: zhikexing-agent-command-consumer

@@ -1,8 +1,8 @@
 param(
     [switch]$Wsl,
-    [string]$Distribution = $env:IIIP_WSL_DISTRIBUTION,
-    [string]$FrontendPath = '../web-intelligent-integrated-interaction-platform',
-    [string]$AgentRuntimePath = '../intelligent-agent-runtime'
+    [string]$Distribution = $env:ZHIKEXING_WSL_DISTRIBUTION,
+    [string]$FrontendPath = '../zhikexing-web',
+    [string]$AgentRuntimePath = '../zhikexing-agent-runtime'
 )
 $ErrorActionPreference = 'Stop'
 $repository = Split-Path $PSScriptRoot -Parent

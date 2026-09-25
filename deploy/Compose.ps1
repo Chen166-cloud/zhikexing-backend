@@ -1,7 +1,7 @@
 param([switch]$Wsl)
 # 使用普通脚本参数，避免 Compose 的 -d 被 PowerShell 解释为 -Debug。
 $ComposeArguments = $args
-$Distribution = $env:IIIP_WSL_DISTRIBUTION
+$Distribution = $env:ZHIKEXING_WSL_DISTRIBUTION
 $ErrorActionPreference = 'Stop'
 $repository = Split-Path $PSScriptRoot -Parent
 if ($Wsl) {
@@ -12,8 +12,11 @@ if ($Wsl) {
     if ($LASTEXITCODE -ne 0) { throw '无法将当前仓库路径转换为 WSL 路径。' }
     $linuxRepository = $linuxRepository.Trim()
     $originalWslEnv = $env:WSLENV
-    # 只转发明确允许的模型配置，密钥不写入命令行和仓库文件。
-    $env:WSLENV = (@($originalWslEnv -split ':') + @('DASHSCOPE_API_KEY/u', 'AI_PROVIDER/u', 'ROCKETMQ_ENABLED/u', 'AGENT_RUNTIME_IMAGE/u') |
+    # 只转发明确设置的覆盖项；空变量会遮蔽 Compose .env 中的值。
+    $forwarded = @('DASHSCOPE_API_KEY', 'AI_PROVIDER', 'ROCKETMQ_ENABLED', 'AGENT_RUNTIME_IMAGE') |
+        Where-Object { [string]::IsNullOrEmpty([Environment]::GetEnvironmentVariable($_, 'Process')) -eq $false } |
+        ForEach-Object { "$_/u" }
+    $env:WSLENV = (@($originalWslEnv -split ':') + $forwarded |
         Where-Object { $_ } | Select-Object -Unique) -join ':'
     try { & wsl @distributionArguments --user root --cd $linuxRepository --exec docker compose @ComposeArguments }
     finally { $env:WSLENV = $originalWslEnv }

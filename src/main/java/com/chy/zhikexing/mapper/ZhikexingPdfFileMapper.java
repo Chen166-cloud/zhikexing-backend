@@ -1,0 +1,9 @@
+package com.chy.zhikexing.mapper;
+
+import com.baomidou.mybatisplus.core.mapper.BaseMapper;
+import com.chy.zhikexing.entity.po.ZhikexingPdfFile;
+import org.apache.ibatis.annotations.Mapper;
+
+@Mapper
+public interface ZhikexingPdfFileMapper extends BaseMapper<ZhikexingPdfFile> {
+}

@@ -27,10 +27,10 @@
       "fieldConfig": {"defaults": {"unit": "bytes"}, "overrides": []}
     },
     {
-      "id": 4, "title": "RabbitMQ 待处理消息", "type": "timeseries",
+      "id": 4, "title": "RocketMQ 消费积压", "type": "timeseries",
       "gridPos": {"h": 8, "w": 24, "x": 0, "y": 14},
       "datasource": {"type": "prometheus", "uid": "prometheus"},
-      "targets": [{"expr": "rabbitmq_queue_messages_ready", "legendFormat": "{{instance}}", "refId": "A"}]
+      "targets": [{"expr": "rocketmq_consumer_lag_messages", "legendFormat": "{{consumer_group}} / {{topic}}", "refId": "A"}]
     }
   ]
 }

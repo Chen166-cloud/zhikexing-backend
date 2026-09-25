@@ -32,6 +32,10 @@ Compose 默认使用 `../intelligent-agent-runtime` 和 `../web-intelligent-inte
 
 ## 业务闭环
 
+新增[免费试听名额秒杀与 Agent 联动模块](docs/modules/免费试听秒杀与Agent联动.md)：用户或已获批准的 Agent 参与限量活动，RocketMQ 事务回调通过 Redis Lua 预占名额，消费者异步创建 0 元试听订单。持久请求、MySQL 条件库存和唯一约束支持重试恢复；受理回执不代表抢课成功。研究依据及[隔离验证记录](docs/modules/免费试听秒杀验证记录.md)区分已实现能力与待验证性能。
+
+截至 2026-09-25：三个仓库的代码与 Compose 配置使用 RocketMQ，隔离环境真实中间件和跨服务联调通过；平时使用的完整 Compose 应用尚未按新配置重建、启动并验收。升级既有环境前需盘点并处理遗留队列消息。本机用于部署的 Ubuntu WSL 检查时为停止状态。下文启动命令是新版操作步骤，不表示已在常用部署执行。
+
 1. 上传 PDF/TXT/Markdown，原文件存入 MinIO，异步解析、切块和向量化，完整版本发布后才参与检索。
 2. Agent 查询授权知识库、课程和校区，展示检索证据与工具结果。
 3. 预约工具生成草稿，LangGraph 持久化暂停，等待用户批准。
@@ -43,8 +47,9 @@ flowchart LR
     Vue[Vue 工作台] --> Java[Java API / 业务工具]
     Java --> MySQL[(MySQL / 审批 / Outbox)]
     MySQL --> Relay[Outbox Relay]
-    Relay --> MQ[RabbitMQ]
-    MQ --> Python[Python / LangGraph]
+    Relay --> MQ[RocketMQ]
+    MQ --> Bridge[Java 顺序消费者 / HTTP 幂等接收桥]
+    Bridge --> Python[Python / LangGraph]
     Java -->|授权查询与 SSE| Python
     Python -->|查询 / 草稿 / 执行 / 对账| Java
     Python --> PG[(PostgreSQL / pgvector / checkpoint)]
@@ -56,9 +61,9 @@ flowchart LR
 ## 技术与工程约束
 
 - Java 21、Spring Boot 4.1.1、Spring AI 2.0.1、MyBatis-Plus 3.5.17、Flyway；Redis 登录态、BCrypt 密码渐进升级。
-- Python 3.13、FastAPI、LangGraph、PostgreSQL checkpoint、pgvector、AIO Pika。
+- Python 3.13、FastAPI、LangGraph、PostgreSQL checkpoint、pgvector；通过 HTTP 幂等接收运行命令。
 - Vue 3、TypeScript、Pinia、Naive UI；可取消、按事件序号恢复的 SSE。
-- RabbitMQ 持久消息、publisher confirm、outbox 租约和消费去重。允许重复投递，业务唯一约束保证同一 actionId 只生成一笔预约。
+- RocketMQ 5.5.1 原生 Java client、持久化 outbox 和消费去重。Java 桥接消费者在 Python Run/取消状态事务落盘后确认，允许重复投递；业务唯一约束保证同一 actionId 只生成一笔预约。免费试听使用独立的事务消息 Topic：半消息 → Lua 预占 Redis → commit → 异步落单。
 - 单 worker 同时执行多个任务；PostgreSQL advisory lock 阻止误启动多个竞争 worker。审批期间不占用模型请求和未确认队列消息。
 - 混合检索是向量召回与中文词项排名的 RRF 融合，当前词法实现不称为 BM25。
 - 运行固定图、提示词、工具 Schema 与模型配置，限制步骤、工具调用、Token、超时和费用。
@@ -102,12 +107,15 @@ Docker Desktop 使用同一初始化脚本，跳过 `Start-WslEngine.ps1`，Comp
 - Vue：进入前端项目，执行 `npm ci`、`npm run build`，本机开发代理指向 Java。
 - 真实接口与约束见 [研发接口契约](docs/upgrade-plan/研发接口契约.md)。
 
-[开发与验证记录](docs/upgrade-plan/开发与验证记录.md) 区分模拟模型回归、真实数据库回归和真实模型整链路结果；[Docker 部署验证记录](docs/deployment/Docker部署验证记录.md) 记录实际容器检查。测试结果不是线上业务规模或效果宣传。按本次开发要求，验证后删除新增临时测试类和脚本，保留生产评测功能及去敏报告，已有测试不擅自删除。
+[开发与验证记录](docs/upgrade-plan/开发与验证记录.md) 和 [Docker 部署验证记录](docs/deployment/Docker部署验证记录.md) 只列新版可复核结果与尚未完成的整体验收。测试结果不是线上业务规模或效果宣传；专项回归测试作为持续验证保留。
+
+试听秒杀与消息投递回归保留在 Java/Python 测试目录，并接入 CI；复现命令见[试听模块验证记录](docs/modules/免费试听秒杀验证记录.md)。
 
 多 worker fencing、扫描件 OCR、本地 reranker 与多 Agent 对照实验有独立验收条件，当前支持边界以验证记录为准。
 
 ## 研发资料
 
+- [产品报告（功能介绍与架构图）](docs/product/产品报告.md)
 - [产品功能说明书（研发版）](docs/product/产品功能说明书-研发版.md)
 - [完整改造研发方案](docs/upgrade-plan/2027-AI-Agent-改造研发方案.md)
 - [模型服务与单 Key 配置](docs/upgrade-plan/模型服务与API配置.md)

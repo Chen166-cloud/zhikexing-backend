@@ -5,7 +5,7 @@ import org.springframework.stereotype.Component;
 
 @Component
 @ConditionalOnProperty(
-        name = "app.agent.rabbitmq-enabled",
+        name = "app.agent.rocketmq-enabled",
         havingValue = "false",
         matchIfMissing = true)
 public class HttpOutboxPublisher implements AgentOutboxPublisher {

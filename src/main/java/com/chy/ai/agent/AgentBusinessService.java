@@ -398,6 +398,8 @@ public class AgentBusinessService {
                         throw error(HttpStatus.CONFLICT, "审批不匹配当前动作");
                     if (!"APPROVED".equals(approval.get("status")))
                         throw error(HttpStatus.CONFLICT, "预约必须经过用户审批");
+                    if (!"reserve_course".equals(approval.get("toolName")))
+                        throw error(HttpStatus.CONFLICT, "审批工具类型不匹配");
                     Map<String, Object> args = (Map<String, Object>) approval.get("args");
                     GeneratedKeyHolder key = new GeneratedKeyHolder();
                     jdbc.update(
@@ -469,6 +471,7 @@ public class AgentBusinessService {
         view.put("id", row.get("id"));
         view.put("runId", row.get("run_id"));
         view.put("actionId", row.get("action_id"));
+        view.put("toolName", row.get("tool_name"));
         view.put("status", state);
         view.put("version", row.get("version"));
         view.put("args", json.read(row.get("args").toString()));
@@ -485,7 +488,7 @@ public class AgentBusinessService {
         Map<String, Object> delivery =
                 jdbc.queryForMap(
                         "SELECT * FROM agent_outbox WHERE run_id=? AND path='/runs' ORDER BY"
-                            + " created_at,id LIMIT 1",
+                                + " created_at,id LIMIT 1",
                         runId);
         String state = delivery.get("status").toString();
         String description =

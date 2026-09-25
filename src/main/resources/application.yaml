@@ -1,6 +1,10 @@
 spring:
   application:
     name: intelligent-integrated-interaction-platform
+  task:
+    scheduling:
+      pool:
+        size: 3
   ai:
     model:
       chat: openai
@@ -33,17 +37,6 @@ spring:
     enabled: true
     baseline-on-migrate: true
     baseline-version: 0
-  rabbitmq:
-    host: ${RABBITMQ_HOST:127.0.0.1}
-    port: ${RABBITMQ_PORT:5672}
-    username: ${RABBITMQ_USERNAME:iiip}
-    password: ${RABBITMQ_PASSWORD:}
-    virtual-host: ${RABBITMQ_VIRTUAL_HOST:iiip}
-    connection-timeout: 5s
-    publisher-confirm-type: correlated
-    publisher-returns: true
-    template:
-      mandatory: true
   data:
     redis:
       host: ${REDIS_HOST:127.0.0.1}
@@ -65,8 +58,7 @@ app:
   agent:
     runtime-url: ${AGENT_RUNTIME_URL:http://127.0.0.1:8000}
     internal-token: ${AGENT_INTERNAL_TOKEN:}
-    rabbitmq-enabled: ${RABBITMQ_ENABLED:false}
-    publisher-confirm-timeout: 10s
+    rocketmq-enabled: ${ROCKETMQ_ENABLED:false}
 aliyun:
   oss:
     endpoint: ${OSS_ENDPOINT:https://oss-cn-shanghai.aliyuncs.com}
@@ -77,12 +69,15 @@ logging:
     org.springframework.ai: WARN
     com.chy.ai: INFO
 management:
-  health:
-    rabbit:
-      enabled: ${RABBITMQ_ENABLED:false}
   server:
     port: ${MANAGEMENT_PORT:8081}
   endpoints:
     web:
       exposure:
         include: health,prometheus
+rocketmq:
+  name-server: ${ROCKETMQ_NAME_SERVER:127.0.0.1:9876}
+  agent:
+    topic: iiip-agent-commands
+    producer-group: iiip-agent-command-producer
+    consumer-group: iiip-agent-command-consumer

@@ -4,10 +4,6 @@
     "digests": "postgres@sha256:742f40ea20b9ff2ff31db5458d127452988a2164df9e17441e191f3b72252193"
   },
   {
-    "image": "rabbitmq:4.3.6-management",
-    "digests": "rabbitmq@sha256:de62d9901fb73aaa8767b9c1e9ea32f2938f69d1b83e430f7c5ca854081d2128"
-  },
-  {
     "image": "docker.langfuse.com/langfuse/langfuse:4.38.0",
     "digests": "docker.langfuse.com/langfuse/langfuse@sha256:47ef2f121e2959c8458c209d118949ade25778017e3f5b75b1e45f72276811c3"
   },
@@ -46,5 +42,9 @@
   {
     "image": "grafana/grafana:13.2.2",
     "digests": "grafana/grafana@sha256:ac461fb352abc50da10a51c7d02462e9c05488f11f53f14b3ad79a8145f638a0"
+  },
+  {
+    "image": "apache/rocketmq:5.5.0",
+    "digests": "apache/rocketmq@sha256:7e8f6c9dbd9df742ed26ba69c00d4ad69e2f86a56f3ca7782ff8144dd0798132"
   }
 ]

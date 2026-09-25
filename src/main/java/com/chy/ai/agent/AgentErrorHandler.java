@@ -6,7 +6,7 @@ import org.springframework.web.server.ResponseStatusException;
 
 import java.util.Map;
 
-@RestControllerAdvice(basePackages = "com.chy.ai.agent")
+@RestControllerAdvice(basePackages = {"com.chy.ai.agent", "com.chy.ai.trial"})
 public class AgentErrorHandler {
     @ExceptionHandler(ResponseStatusException.class)
     public ResponseEntity<?> status(ResponseStatusException error) {

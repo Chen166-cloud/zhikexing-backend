@@ -86,7 +86,7 @@ services:
     image: redis:8.2.1-alpine
     restart: unless-stopped
     environment: {REDIS_PASSWORD: "${REDIS_PASSWORD}"}
-    command: [sh, -c, 'exec redis-server --appendonly yes --requirepass "$$REDIS_PASSWORD"']
+    command: [sh, -c, 'exec redis-server --appendonly yes --appendfsync everysec --maxmemory-policy noeviction --requirepass "$$REDIS_PASSWORD"']
     ports: ["127.0.0.1:${REDIS_PORT:-16379}:6379"]
     volumes: ["redis-data:/data"]
     healthcheck:
@@ -95,25 +95,54 @@ services:
       timeout: 5s
       retries: 20
 
-  rabbitmq:
-    image: rabbitmq:4.3.6-management
-    hostname: rabbitmq
+  rocketmq-nameserver:
+    image: apache/rocketmq:5.5.0@sha256:7e8f6c9dbd9df742ed26ba69c00d4ad69e2f86a56f3ca7782ff8144dd0798132
     restart: unless-stopped
+    command: [sh, mqnamesrv]
     environment:
-      RABBITMQ_DEFAULT_USER: iiip
-      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD}
-      RABBITMQ_DEFAULT_VHOST: iiip
-    ports:
-      - "127.0.0.1:${RABBITMQ_PORT:-15673}:5672"
-      - "127.0.0.1:${RABBITMQ_MANAGEMENT_PORT:-15672}:15672"
-    volumes:
-      - rabbitmq-data:/var/lib/rabbitmq
-      - ./deploy/rabbitmq/enabled_plugins:/etc/rabbitmq/enabled_plugins:ro
+      JAVA_OPT_EXT: -Xms128m -Xmx256m -Xmn64m
+    ports: ["127.0.0.1:${ROCKETMQ_NAMESERVER_PORT:-9876}:9876"]
     healthcheck:
-      test: [CMD, rabbitmq-diagnostics, -q, ping]
+      test: [CMD-SHELL, "bash -c ': >/dev/tcp/127.0.0.1/9876'"]
+      interval: 10s
+      timeout: 5s
+      retries: 20
+
+  rocketmq-broker:
+    image: apache/rocketmq:5.5.0@sha256:7e8f6c9dbd9df742ed26ba69c00d4ad69e2f86a56f3ca7782ff8144dd0798132
+    hostname: rocketmq-broker
+    restart: unless-stopped
+    depends_on:
+      rocketmq-nameserver: {condition: service_healthy}
+    environment:
+      NAMESRV_ADDR: rocketmq-nameserver:9876
+      JAVA_OPT_EXT: -Xms256m -Xmx512m -Xmn128m
+      BROKER_ADVERTISED_HOST: ${ROCKETMQ_BROKER_HOST:-rocketmq-broker}
+    command:
+      - sh
+      - -c
+      - >-
+        cp /etc/rocketmq/broker.conf /tmp/iiip-broker.conf &&
+        printf '\nbrokerIP1=%s\n' "$$BROKER_ADVERTISED_HOST" >> /tmp/iiip-broker.conf &&
+        exec sh mqbroker -c /tmp/iiip-broker.conf
+    ports: ["127.0.0.1:10911:10911", "127.0.0.1:10909:10909"]
+    volumes:
+      - rocketmq-store:/home/rocketmq/store
+      - rocketmq-logs:/home/rocketmq/logs
+      - ./deploy/rocketmq/broker.conf:/etc/rocketmq/broker.conf:ro
+    healthcheck:
+      test: [CMD-SHELL, "sh mqadmin brokerStatus -n rocketmq-nameserver:9876 -b 127.0.0.1:10911 >/dev/null 2>&1"]
       interval: 10s
       timeout: 10s
       retries: 20
+
+  rocketmq-init:
+    image: apache/rocketmq:5.5.0@sha256:7e8f6c9dbd9df742ed26ba69c00d4ad69e2f86a56f3ca7782ff8144dd0798132
+    depends_on:
+      rocketmq-broker: {condition: service_healthy}
+    entrypoint: [sh, /etc/rocketmq/init-topics.sh]
+    volumes:
+      - ./deploy/rocketmq/init-topics.sh:/etc/rocketmq/init-topics.sh:ro
 
   minio:
     image: cgr.dev/chainguard/minio@sha256:e7728e37a015dcd2f2b146abc4aedc0096769ac72cb64cc9ed36b7f4183361e1
@@ -280,7 +309,7 @@ services:
     depends_on:
       mysql: {condition: service_healthy}
       redis: {condition: service_healthy}
-      rabbitmq: {condition: service_healthy}
+      rocketmq-init: {condition: service_completed_successfully}
     environment:
       DB_URL: jdbc:mysql://mysql:3306/iiip?serverTimezone=Asia/Shanghai&useUnicode=true&characterEncoding=utf-8&allowPublicKeyRetrieval=true&useSSL=false
       DB_USERNAME: iiip
@@ -288,12 +317,8 @@ services:
       REDIS_HOST: redis
       REDIS_PORT: "6379"
       REDIS_PASSWORD: ${REDIS_PASSWORD}
-      RABBITMQ_ENABLED: ${RABBITMQ_ENABLED:-true}
-      RABBITMQ_HOST: rabbitmq
-      RABBITMQ_PORT: "5672"
-      RABBITMQ_USERNAME: iiip
-      RABBITMQ_PASSWORD: ${RABBITMQ_PASSWORD}
-      RABBITMQ_VIRTUAL_HOST: iiip
+      ROCKETMQ_ENABLED: ${ROCKETMQ_ENABLED:-true}
+      ROCKETMQ_NAME_SERVER: rocketmq-nameserver:9876
       AGENT_RUNTIME_URL: http://agent-runtime:8000
       AGENT_INTERNAL_TOKEN: ${AGENT_INTERNAL_TOKEN}
       DASHSCOPE_API_KEY: ${DASHSCOPE_API_KEY:-}
@@ -316,7 +341,6 @@ services:
     restart: unless-stopped
     depends_on:
       postgres: {condition: service_healthy}
-      rabbitmq: {condition: service_healthy}
       minio-init: {condition: service_completed_successfully}
     environment:
       AGENT_DATABASE_URL: postgresql+psycopg://iiip:${POSTGRES_PASSWORD}@postgres:5432/iiip_agent
@@ -324,8 +348,6 @@ services:
       JAVA_TOOL_BASE_URL: http://backend:8080
       DASHSCOPE_API_KEY: ${DASHSCOPE_API_KEY:-}
       AI_PROVIDER: ${AI_PROVIDER:-bailian}
-      RABBITMQ_ENABLED: ${RABBITMQ_ENABLED:-true}
-      RABBITMQ_URL: amqp://iiip:${RABBITMQ_PASSWORD}@rabbitmq:5672/iiip
       AI_CHAT_MODEL: qwen3.7-flash
       AI_EMBEDDING_MODEL: text-embedding-v4
       AI_EMBEDDING_DIMENSIONS: "1024"
@@ -379,7 +401,8 @@ volumes:
   mysql-data:
   postgres-data:
   redis-data:
-  rabbitmq-data:
+  rocketmq-store:
+  rocketmq-logs:
   minio-data:
   langfuse-postgres-data:
   langfuse-redis-data:

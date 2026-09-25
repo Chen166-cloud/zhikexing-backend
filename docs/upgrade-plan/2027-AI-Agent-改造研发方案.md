@@ -2,80 +2,30 @@
 
 **面向 2027 届 AI Agent 研发与后端开发岗位的改造研发方案**
 
-调研日期：2026-09-17。项目基线：后端 46fa3cc；前端 246d2d0。适用对象：同时准备 Agent 和后端岗位，Agent 内容更多，允许引入 Python，追求完整工程。
+更新日期：2026-09-25。适用对象：同时准备 Agent 和后端岗位，Agent 内容更多，允许引入 Python，追求完整工程。本文按当前三个仓库的代码架构描述已实现能力，尚未完成的性能与效果指标保留为研发目标。
 
-模型选型更新：2026-09-18，用户已确定日常 Agent 使用阿里云百炼 `qwen3.7-flash`，Embedding 保留 `text-embedding-v4` / 1024 维，两者共用一把百炼 API Key。具体配置、迁移边界与验收见[模型服务与 API 配置](./模型服务与API配置.md)。
+模型使用阿里云百炼 `qwen3.7-flash` 和 `text-embedding-v4` / 1024 维，共用一把百炼 API Key。具体配置见[模型服务与 API 配置](./模型服务与API配置.md)。
 
-原始方案交付时完成了代码审计、公开资料调研和研发设计。本文中的性能、效果和可靠性目标仍是**待验证的验收目标**；实际完成情况请以随后补充的验证记录为准，不能把目标数字作为项目成绩。
+当前工程已落地 Java 业务后端、Python Agent Runtime、Vue 工作台、多空间权限、知识检索和引用、审批恢复、幂等预约、取消、规则评测及可观测。新增[免费试听名额秒杀与 Agent 联动](../modules/免费试听秒杀与Agent联动.md)：活动、参与请求、RocketMQ 事务消息、Redis Lua 预占、MySQL 条件库存和 0 元订单、可恢复消费与对账、Agent 审批及回查。同一 RocketMQ Broker 还承载普通 Agent 命令，由 Java 消费者通过内部 HTTP 交给 Python；当前 Agent 图为 `react-trial-approval-v4`。源码与 Compose 已更新，隔离集成测试通过，常用完整部署尚未重建验收。性能、效果和高可用数字仍需专门验证，见[专项验证记录](../modules/免费试听秒杀验证记录.md)和[岗位调研](../research/2026-09-25-秒杀模块岗位与技术调研.md)。
 
-**实施进度补记（2026-09-18）：** 核心工程版已完成实际开发、联调与 Docker 部署。独立 Python 服务见 [intelligent-agent-runtime 仓库](https://gitee.com/chy66666/intelligent-agent-runtime.git)，通过内部 HTTP 业务工具及 RabbitMQ 命令与原 Java/Vue 项目联动。已落地多空间权限、知识版本与引用、审批恢复、幂等预约、取消、规则评测、可观测及备份恢复；多 worker、300样本正式效果基准、OCR/reranker和MCP/多Agent实验仍有独立验收条件。实际数据以[开发与验证记录](./开发与验证记录.md)及[研发接口契约](./研发接口契约.md)为准。
+## 1. 当前项目定位与已实现范围
 
-## 1. 先给结论
+项目是 **Java 业务后端 + Python Agent Runtime + Vue 工作台** 的课程咨询、知识问答、普通预约和免费试听抢课平台。Java 负责身份、空间权限、审批、业务事务、库存与订单；Python 负责 LangGraph 运行、检索、checkpoint 和评测；Vue 展示 SSE、引用与人工审批。模型使用百炼 qwen3.7-flash 与 text-embedding-v4 / 1024 维。
 
-建议将项目升级为 **“企业知识与业务办理 Agent 平台”**，第一条完整业务线沿用已有课程、校区、预约和 PDF 数据，做成**有依据的课程咨询、方案比较与预约办理助手**。
+现有代码已经具备工作空间、文档版本/引用、普通预约草稿与幂等写入、Agent 运行恢复，以及试听活动、RocketMQ 事务消息、Redis Lua 预占、MySQL 0 元订单、对账和 Agent 试听审批。真实中间件隔离集成与 fixture 模型跨服务演练已通过。常用完整 Compose 尚未用新配置重建验收；真实模型对新增试听工具、性能和高可用仍需单独验证。
 
-主架构采用 **Java 业务后端 + Python Agent Runtime + Vue 工作台**：
+本方案的后续重点是完整部署验收、真实模型与浏览器 E2E、故障恢复、容量测试、RAG 质量评测以及必要的生产安全建设。各能力的当前状态以[产品功能说明书](../product/产品功能说明书-研发版.md)、[接口契约](研发接口契约.md)和[试听模块验证记录](../modules/免费试听秒杀验证记录.md)为准。
 
-- Java 负责身份、空间权限、课程与预约、审批、工具执行、幂等、事务与对外 API。
-- Python 负责 Agent 状态图、检索、上下文、模型与工具选择、运行恢复、评测和实验。
-- Vue 展示答案、文档引用、执行步骤、审批卡、恢复状态和质量报告。
+## 2. 当前架构的关键取舍
 
-你的技术栈不是整体过时。Java 21、Spring Boot、MySQL、Redis、Vue 都可以保留；Spring AI 1.0.0 确实需要评估升级，但“换成最新版本”本身不足以形成有说服力的项目。真正的改造重点是：
-
-| 当前形态 | 目标形态 | 面试中能拿出的证据 |
+| 取舍 | 当前实现 | 后续验证重点 |
 |---|---|---|
-| 模型流式回答 | 有状态、受预算约束的任务执行 | 单次任务的状态、事件、工具结果和失败恢复录像 |
-| PDF 向量问答 | 带权限、版本和引用的知识检索 | 固定评测集、召回与答案指标、消融实验 |
-| 模型调用方法写预约表 | 审批绑定参数、幂等执行、结果回查 | 重复调用和宕机注入后只产生一笔业务结果 |
-| 聊天窗口充当历史 | 完整消息记录、工作记忆和长期记忆分离 | 长对话、重启、记忆删除的回归用例 |
-| 多个独立聊天页面 | 统一任务工作台 | 断线重连、切会话不串流、引用定位 |
-| 能启动的个人 Demo | 可部署、可测试、可观测的工程 | CI、迁移脚本、压测报告、运行手册 |
-
-主方案不追求把所有热门框架都装进来。LangGraph 是唯一主编排器；Spring AI 保留为旧接口适配和迁移基线。完整工程中，Agent 与后端能力约按 **6∶4** 分配设计和展示篇幅。
-
-## 2. 现有项目的真实状况
-
-审计已覆盖后端全部 56 个生产 Java 文件、1 个测试类、配置、Mapper XML 与 README，以及前端业务页面、路由、服务、组件和构建配置。以下结论主要来自静态代码；不能当作已在运行环境复现的漏洞或性能数据。
-
-### 2.1 已有基础应该保留
-
-| 层 | 仓库中可确认的实现 | 判断 |
-|---|---|---|
-| Java | Java 21、Boot 3.5.3、Spring AI 1.0.0、MyBatis-Plus 3.5.10.1 | 有良好的 Java 迁移起点 |
-| Web | Spring MVC 返回 Flux 字符串 | 支持流式内容，但不是完整 WebFlux 架构，也不是标准 SSE |
-| AI | 普通聊天、课程客服、PDF 问答、生活模拟游戏 | 四个应用入口，尚无持久化 Agent 任务运行时 |
-| Tools | 课程查询、校区查询、预约插入 | 有真实业务动作，可以继续深入 |
-| RAG | OSS 原文件、按页解析、段落切块、Redis 向量检索 | 可保留为 baseline；有中文句边界及重叠处理 |
-| 记忆 | JDBC 的 20 条消息窗口，游戏采用内存窗口 | 上下文已有基础，完整历史需要独立设计 |
-| 身份 | Redis Token 登录、会话归属检查 | 已有鉴权；需要补齐上传路径和异步边界 |
-| 前端 | Vue 3、Vite 6、Markdown、DOMPurify、PDF 预览；Pinia/Naive UI 已安装但未形成业务状态/组件体系 | 足够承载目标产品，需真正使用类型与状态治理，无需重写 React |
-
-版本依据：[后端 pom.xml](../../pom.xml#L6)、[前端 package.json](https://gitee.com/chy66666/web-intelligent-integrated-interaction-platform/blob/master/package.json#L1)。前端 package 声明包含范围版本，不能把它们当成生产环境实际安装版本。MySQL、Redis 服务端的实际运行版本未核验。
-
-### 2.2 必须优先解决的问题
-
-**P0 表示进入新版业务链路前必须修复；P1 表示首个可公开演示版本应解决。**
-
-| 优先级 | 代码依据与发现 | 改造动作 |
-|---|---|---|
-| P0 | [PDF 上传入口](../../src/main/java/com/chy/ai/controller/PdfController.java#L40) 没有校验会话所有者；[切块元数据](../../src/main/java/com/chy/ai/service/impl/FileServiceImpl.java#L140) 仅用传入的 chatId 关联向量 | 上传前查权限；服务端生成 document/version ID；检索强制空间与文档权限；补双用户污染测试 |
-| P0 | [PDF 过滤表达式](../../src/main/java/com/chy/ai/controller/PdfController.java#L83) 拼接 chatId；[排序字段](../../src/main/java/com/chy/ai/tools/CourseTools.java#L34) 使用模型传入字符串 | 使用结构化过滤、ID 格式校验、排序枚举。这里是可推导的注入风险，尚未做利用复现 |
-| P0 | [预约工具](../../src/main/java/com/chy/ai/tools/CourseTools.java#L45) 直接把模型参数写库 | 先创建待确认操作，再由服务端审批与命令执行；加入归属、业务校验和幂等 |
-| P1 | [身份回退逻辑](../../src/main/java/com/chy/ai/service/impl/FileServiceImpl.java#L249) 在取不到用户时默认用户 1；ThreadLocal 未完整处理异步流生命周期 | 缺少身份直接拒绝；跨线程显式传递不可变身份对象；补并发/异步隔离测试 |
-| P1 | [密码实现](../../src/main/java/com/chy/ai/util/PasswordEncoder.java#L21) 是加盐单次 MD5 | 使用 BCrypt/Argon2，并支持旧密码登录成功后渐进迁移 |
-| P1 | [20 条 memory](../../src/main/java/com/chy/ai/config/IiipConfiguration.java#L45) 被[历史接口](../../src/main/java/com/chy/ai/controller/ChatHistoryController.java#L43) 直接读取 | 独立保存完整消息；窗口和摘要仅是模型输入视图 |
-| P1 | [同步文件管线](../../src/main/java/com/chy/ai/service/impl/FileServiceImpl.java#L57) 串联 OSS、DB、解析、Embedding、向量写入 | 改为可重试 ingestion job；新版本 READY 后再切换；补偿旧对象和索引 |
-| P1 | [删除会话](../../src/main/java/com/chy/ai/service/impl/IiipChatRecordServiceImpl.java#L93) 只删记录与 memory | 定义消息、知识库、对象、向量各自生命周期，不能仅靠删除聊天行 |
-| P1 | [流式接口](../../src/main/java/com/chy/ai/controller/ChatController.java#L31) 为 text/html 内容流 | 建立标准 SSE 事件协议、runId、seq、恢复游标、错误及结束事件 |
-| P1 | 前端 PDF 上传路径只检查 HTTP 成功，后端 Result.fail 仍可返回 HTTP 200 | 统一错误契约；“已上传”与“已索引、可问答”分开显示 |
-| P1 | 前端流式更新依赖当前页面消息数组，切换会话后旧流可能更新新会话 | 按 runId/messageId 更新固定记录；切页释放订阅；保留后台任务 |
-| P1 | 前端有图片/音频/视频附件入口，[后端聊天接口](../../src/main/java/com/chy/ai/controller/ChatController.java#L32) 却只接 prompt/chatId | 先按实际能力关闭或限制入口；新增能力后再开放 |
-| P1 | [测试类](../../src/test/java/com/chy/ai/IiipApplicationTests.java#L21) 没有断言，部分测试真实调用模型并写向量库 | 建隔离测试配置、测试数据和 mock provider；默认 CI 不触发真实计费接口 |
-
-额外核对了本机 Spring AI 1.0.0 依赖源码：MessageWindowChatMemory 会裁剪后调用 saveAll，JDBC 实现会替换对应会话的消息。因此旧消息会从该存储中淘汰，而不只是“不再放入 prompt”。游戏使用内存 memory，历史却查 JDBC，也是需要修复的实际错位。
-
-当前项目也不是“毫无安全措施”：正常聊天/历史已检查所有权，PDF 上传已有大小上限，Markdown 使用了 DOMPurify，模型密钥主要通过环境变量配置。方案只针对核实的缺口，不把已有能力抹掉。
-
+| Java 与 Python 分工 | Java 守住业务事务；Python 运行 Agent 和知识工作流 | 可信身份传递、跨服务故障与升级兼容 |
+| MySQL 与 PostgreSQL/pgvector | MySQL 记业务最终账，PG 记运行、消息、文档和向量 | 独立备份恢复、跨服务结果对账 |
+| Redis 与 MySQL | Lua 做快速原子准入；MySQL 条件库存和唯一键做最终约束 | 缓存丢失时停受理、人工裁决与新活动恢复 |
+| RocketMQ | 一个 Broker，两类 Topic：普通 Agent 命令和试听事务消息 | 重复投递、事务 UNKNOWN、重试/DLQ 与多副本可用性 |
+| Agent 审批 | 模型只能查询和起草，用户批准固定参数，Java 按 actionId 幂等执行 | 旧 checkpoint 兼容、取消与已受理动作竞争 |
+| 正确性与性能 | 合成 40 人竞争 8 名额且无超卖 | 独立测受理/落单 p95、Broker 积压和数据库锁等待 |
 ## 3. 2027 岗位调研如何影响方案
 
 ### 3.1 区分三种岗位，避免学错主线
@@ -107,7 +57,7 @@
 | 记忆和上下文 | append-only 消息、摘要、事实来源、Token 预算 | 长对话对照实验、隐私删除测试 |
 | 多 Agent | 两个只读专家并行分析，由协调器合并 | 与单 Agent 同条件的成本/质量对比 |
 | 评测和可观测 | trace、rubric、规则 grader、回归门禁 | 可复现实验脚本和评测工作台 |
-| 后端并发与可靠性 | outbox/inbox、幂等、租约、资源隔离 | 故障注入、队列积压恢复、压测曲线 |
+| 后端并发与可靠性 | outbox、Run 幂等接收、试听持久请求、租约与资源隔离 | 故障注入、队列积压恢复、压测曲线 |
 | 工程协作 | OpenAPI、ADR、CI、容器部署 | 一键启动、契约测试、版本与变更记录 |
 
 ## 4. 热门技术的证据与选型
@@ -138,12 +88,12 @@
 | 组件 | 选择 | 负责解决的问题与边界 |
 |---|---|---|
 | Java 服务 | Java 21、Spring Boot、Spring Security、MyBatis-Plus、Flyway | 权限、交易性业务、审计、工具执行；先模块化单体 |
-| Agent 服务 | Python 3.12 起步，FastAPI、Pydantic、LangGraph、uv | schema、异步 IO、状态图、依赖锁定；Python 小版本以集成测试结果最终冻结 |
-| 业务数据库 | 保留 MySQL | 复用用户、课程、校区、预约数据和后端知识体系 |
+| Agent 服务 | Python 3.13、FastAPI、Pydantic、LangGraph | schema、异步 IO、状态图与持久化运行 |
+| 业务数据库 | MySQL | 用户、课程、校区、预约、审批；试听活动、库存、请求与 0 元订单 |
 | Agent/知识数据库 | PostgreSQL + pgvector | 持久化 checkpoint、run/event、文档 chunks、向量和评测元数据 |
-| 缓存 | Redis | 限流、短缓存、临时通知；不作为唯一任务真相或业务幂等凭据 |
-| 消息队列 | RabbitMQ | 跨语言任务投递、文档入库通知、重试/死信；不传逐 Token 流 |
-| 文件 | 保留 OSS，定义 ObjectStorage 接口 | 原文、解析产物、报告；本地开发可替换兼容存储 |
+| 缓存 | Redis | 登录态、短缓存、试听 Lua 原子预占与限流；MySQL 仍是最终库存真相 |
+| 消息队列 | RocketMQ | Agent 普通命令与试听事务消息分别使用 Topic；Java 消费者幂等桥接 Python，异步落单与故障恢复 |
+| 文件 | MinIO（S3） | 知识原文、解析产物与观测对象 |
 | 检索 | pgvector dense + 词法基线；成熟后加 Elasticsearch BM25 | 用实验证明额外搜索引擎的必要性，避免一开始同时上多种向量库 |
 | 文档解析 | Docling，先与现有 PDF reader 做对照 | 布局、表格、OCR；耗 CPU 的解析使用独立 worker |
 | 模型接入 | 百炼 `qwen3.7-flash` + `text-embedding-v4` / 1024 维，共用一把百炼 API Key；小型 adapter | 聊天与向量化分开配置，统一处理工具、流、usage、超时与预算；当前不引入多厂商网关 |
@@ -154,13 +104,13 @@
 
 **为什么允许 MySQL + PostgreSQL 两个数据库？** MySQL 保留现有业务与事务资产，PostgreSQL 服务 LangGraph checkpoint、知识与向量查询，两者没有跨库外键和共享写表。代价是两套备份、连接池、迁移、监控与一致性治理。如果实做发现运维收益不成立，可以通过 ADR 将业务也迁往 PostgreSQL；这是替代路线，不要求同时实现两套业务存储。
 
-推荐并不意味着每个组件从第一天就部署。第一版用受控内部 HTTP 接入运行时；可靠投递阶段再加入 RabbitMQ。全文后续给出完整工程的目标形态。
+当前 Compose 已配置上述核心组件；常用完整环境还需要按新版重新构建并验收。详细组件类型和职责见[中间件清单](中间件与基础设施清单.md)。
 
 ### 4.4 版本升级策略
 
 截至调研日，[Spring AI 官方项目页](https://spring.io/projects/spring-ai/) 显示 2.0.1；[官方入门文档](https://docs.spring.io/spring-ai/reference/getting-started.html) 明确 2.0.x 对应 Boot 4.0.x/4.1.x。本项目已成套升级到 Boot 4.1.1、Spring AI 2.0.1、MyBatis-Plus Boot 4 starter 3.5.17，JDK 保持 21。
 
-迁移已适配 Jackson 3、MyBatis 服务包名、RedisClient、模型扁平配置和包含 `/v1` 的百炼兼容地址，并用 Flyway V4 保留旧聊天内容及顺序。独立副本的真实 Boot 启动、MySQL/Redis、注册登录、HTTP 业务接口、配置绑定和 SDK HTTP 协议验证均通过，详见 [Spring Boot 4 迁移与验证记录](SpringBoot4迁移与验证记录.md)。真实模型、Rabbit 消费和前端闭环以总体验收记录为准。DeepSeek 仅保留在旧版审计记录中，不作为目标配置的启动依赖。纯 Java 备选仍须按 [Spring AI Alibaba 官方兼容表](https://java2ai.com/docs/versions/) 配套 BOM。
+迁移已适配 Jackson 3、MyBatis 服务包名、RedisClient、模型扁平配置和包含 `/v1` 的百炼兼容地址，Flyway 迁移已扩展至 V5 试听业务表。Boot 4 与核心业务的验证见 [Spring Boot 4 迁移与验证记录](SpringBoot4迁移与验证记录.md)；RocketMQ 和试听业务的新验证见[专项验证记录](../modules/免费试听秒杀验证记录.md)。
 
 Python 依赖用 uv.lock，前端采用唯一包管理器与 lockfile，容器用具体标签/镜像摘要；LangGraph 与 checkpoint 插件分开记录版本。[LangGraph releases](https://github.com/langchain-ai/langgraph/releases) 是核对入口。文档不把 main 分支当稳定发布版，也不以 star 数排名代替工程选型。
 
@@ -202,12 +152,15 @@ Python 依赖用 uv.lock，前端采用唯一包管理器与 lockfile，容器�
 flowchart TB
     UI["Vue 工作台：任务、知识、审批、评测"] --> API["Java API / BFF"]
     API --> AUTH["身份、空间权限、配额"]
-    API --> BIZ["课程、校区、预约、审批与工具执行"]
+    API --> BIZ["课程、校区、预约、试听活动与审批"]
     API --> MYSQL[("MySQL：业务真相、提交记录、Outbox")]
     MYSQL --> RELAY["Outbox Relay"]
-    RELAY --> MQ["RabbitMQ：Run / Ingestion 命令"]
-    MQ --> INBOX["Python Inbox：先持久化接收"]
-    INBOX --> PG[("PostgreSQL：Run、Event、Checkpoint、Chunk、Eval")]
+    RELAY --> MQ["RocketMQ：Agent 普通命令"]
+    MQ --> BRIDGE["Java 消费者：内部 HTTP 幂等桥接"]
+    BRIDGE --> PG[("PostgreSQL：Run、Event、Checkpoint、Chunk、Eval")]
+    API --> TXMQ["RocketMQ：试听事务消息"]
+    TXMQ --> ORDER["Java 消费者：条件扣库存与0元订单"]
+    ORDER --> MYSQL
     PG --> WORKER["Agent Worker：租约、状态图、预算"]
     WORKER --> RETRIEVE["检索与上下文模块"]
     RETRIEVE --> PG
@@ -220,15 +173,15 @@ flowchart TB
     INGEST["Ingestion Worker：解析、切块、Embedding"] --> PG
     INGEST --> EMBED["百炼：text-embedding-v4 / 1024 维"]
     RETRIEVE --> EMBED
-    INGEST --> OSS["OSS：原文与产物"]
+    INGEST --> OSS["MinIO：原文与产物"]
     API --> OSS
-    API --> REDIS["Redis：限流与短缓存"]
+    API --> REDIS["Redis：登录态、Lua预占、限流"]
     WORKER --> REDIS
     API -. "traceparent" .-> OBS["OTel / Langfuse / 指标与日志"]
     WORKER -. "traceparent" .-> OBS
 ~~~
 
-部署单元先是 **Java API、Python API、Python worker、Vue 静态站点**。Python API、Agent worker、ingestion worker 可以来自同一代码库和镜像，通过启动命令/队列隔离职责；不要将每个图节点拆成微服务。
+当前部署单元包含 Java API、Python Runtime/worker、Vue/Nginx 以及核心中间件。Python API、Agent worker 与入库作业由同一代码库承载，不把每个图节点拆成微服务。
 
 ### 6.1 数据与状态的唯一所有者
 
@@ -246,16 +199,16 @@ flowchart TB
 ### 6.2 一次请求如何安全跨服务
 
 1. Java 校验当前用户、会话归属、资源集合、配额；计算规范化 requestHash。
-2. 在同一 MySQL 事务内按 UNIQUE(workspaceId, actorId, conversationId, clientRequestId) 查重、生成 runId、写 task_request 和 outbox。相同键/相同 payload 返回原 runId，相同键/不同 payload 返回 409；返回 202 不代表已开始模型调用。
+2. 在同一 MySQL 事务内按 UNIQUE(workspaceId, actorId, conversationId, clientRequestId) 查重、生成 runId、写 task_request 和 outbox。相同键/相同 payload 返回原 runId，相同键/不同 payload 返回 409；当前提交接口返回 200 和 QUEUED，不代表已开始模型调用。
 3. relay 在发布确认后标记投递；失败重试。消息可能重复，不能宣称端到端 exactly-once。
-4. Python 消费者在 PostgreSQL 事务内写 inbox、agent_run、待执行作业，再 ACK；重复 requestId 返回已有 run。
+4. Java RocketMQ 消费者经内部 HTTP 将命令交给 Python；Python 按 run 主键和 request_hash 幂等持久化，返回 2xx 后 Java 确认消息；不另设 Python MQ consumer 或 inbox 表。
 5. worker 通过持久化作业领取与租约开始执行。人在审批页面停留时，不长期占据 MQ 未确认消息或数据库连接。
 6. 运行事件写 PostgreSQL 后对外发布；Java 校验读取权限后代理 SSE。
 7. Agent 调用写工具时，Java 独立检查审批、参数版本、资源权限与业务不变量，事务提交后返回稳定结果。
 
 Java 已提交但 Python 尚未接收时，GET /runs/{id} 根据 task_request 返回 submission.status=ACCEPTED_PENDING_DISPATCH、execution=null；事件入口等待或提示重试，不当作永久 404。Python 建立 run 后以运行时为 execution 状态权威。投递失败、运行失败和不存在要区分；task_request 不保存可与 PG 竞争写入的运行终态。
 
-RabbitMQ 的 publisher confirm 与 consumer ACK 保证的对象不同，失败时仍可能出现重复投递。[官方可靠性文档](https://www.rabbitmq.com/docs/reliability)、[确认机制文档](https://www.rabbitmq.com/docs/confirms)
+RocketMQ 发布成功与消费者确认负责不同阶段，失败时仍可能重复投递；业务结果靠 Run 幂等接收、请求主键与 MySQL 唯一约束收敛。[RocketMQ 事务消息](https://rocketmq.apache.org/docs/featureBehavior/04transactionmessage/)、[消息重试](https://rocketmq.apache.org/docs/featureBehavior/10consumerretrypolicy/)
 
 ### 6.3 双库一致性采用的边界
 
@@ -366,49 +319,47 @@ checkpoint_ref / attempt / lease_epoch / error_class
 
 ### 8.1 将 CourseTools 迁成业务命令边界
 
-建议第一组工具：
+当前图使用的工具与 Java 内部受控执行边界：
 
 | 工具 | 类型 | 约束 |
 |---|---|---|
-| search_courses | 只读 | 类型/学历/城市/排序枚举，分页上限，返回有限字段 |
-| list_campuses | 只读 | 地域筛选，禁止无界返回 |
-| get_available_slots | 只读 | 返回 slotId、余量、resourceVersion |
+| search_courses | 只读 | 类型/学历/关键词/排序白名单，返回有限字段 |
+| list_campuses | 只读 | 校区有界查询 |
 | search_knowledge | 只读 | 服务端授权资源集合，返回 evidenceId 和来源 |
-| draft_reservation | 草稿 | 接收预先持久化的 actionId，生成 canonical args 和待审批展示内容 |
-| submit_reservation | 写 | 需要有效 approvalId、argsHash、actionId、epoch |
-| get_reservation_by_action | 只读 | 超时后对账，返回真实业务状态 |
-| cancel_reservation | 写，后期 | 独立审批、状态前置条件，不能作为异常兜底偷偷调用 |
+| ask_user | 交互 | 缺少条件时让运行进入 WAITING_INPUT |
+| draft_reservation | 草稿 | 稳定 actionId 和真实课程/校区，生成固定审批参数 |
+| query_trial_campaigns | 只读 | 查询当前身份可见活动 |
+| draft_trial_claim | 草稿 | 固定活动与当前身份，生成 claim_trial 审批，不预占库存 |
+| query_trial_claim | 只读 | 按原动作回查参与请求及订单终态 |
+
+模型不会直接选择执行普通预约或试听订单的写接口；用户批准后由运行时经可信 Java 内部 API 按固定参数提交。普通预约成功看 reservationId，试听成功看 `SUCCEEDED + orderId`。
 
 参数用 JSON Schema/Pydantic DTO；Java 再做 Bean Validation 与领域校验。课程、校区和时间使用 ID，展示名由后端查回。金额用分等固定精度单位，不让模型自由生成价格。
 
 ### 8.2 审批与幂等的具体实现
 
-approval 保存 actor/tenant、runId、actionId、toolVersion、规范化参数摘要、目标资源版本、有效期、状态版本和决定人。参数修改、价格/时段版本变化或权限变化都要重新验证；需要重新确认时创建新审批。
+approval 保存 actor/workspace、runId、actionId、toolName、固定参数、有效期、状态版本和决定。普通预约与 `claim_trial` 使用不同工具类型；运行时只能提交已批准草稿中的参数。
 
 同意接口使用 expectedVersion 做 CAS。重复点击返回已记录的决定；拒绝后不能用同一 approvalId 再变成批准。
 
-Java 在同一事务写审批决定与 approval.decided outbox；Python inbox 去重后持久化 resume job，再由 worker 恢复对应 interrupt。定期按 actionId/approvalId 对账，覆盖通知延迟与丢失；不能仅靠审批接口落库后的一次同步 HTTP 调用唤醒。
+Java 持久化审批决定；Python 在恢复时按可信 actor/workspace 查询审批，按 run/action 标识防止重复执行。对命令交接使用 RocketMQ 的 Java 消费者与 Python Run 幂等接收；审批等待期间不占用未确认消息。按 actionId/approvalId 对账，覆盖通知延迟与丢失。
 
-补充信息接口 POST /runs/{id}/inputs 接收 interruptId、expectedVersion、clientRequestId 和用户消息，先在 Java 持久化请求/outbox，再由 Python 校验等待状态并幂等 resume。WAITING_APPROVAL 期间修改条件会使 Java 中的旧审批失效，更新 planRevision 并重新规划/确认；RUNNING 时的新条件需显式中断或排队。resume job 和输入消息按稳定 ID 去重。
+补充信息接口 `POST /runs/{id}/inputs` 接收 workspaceId、input、clientRequestId；Python 校验 WAITING_INPUT 并幂等恢复。WAITING_APPROVAL 不接受普通补充输入修改草稿；要改办理条件，应拒绝原草稿并发起新运行。
 
 执行命令的 MySQL 事务：
 
 ~~~text
 先校验可信身份、资源归属及该结果的读取权限
-校验 run epoch
-锁定 approval / execution authority
-查找 UNIQUE(tenant_id, action_id)
-  已完成且 args_hash 相同：返回原结果
-  同 key 不同 args_hash：409 IDEMPOTENCY_CONFLICT
-校验审批状态、过期时间、资源版本与当前权限
-校验并扣减时段余量 / 创建预约
-写 tool_execution.result 与业务 outbox
+锁定运行与对应审批，复核状态、版本、有效期及取消标记
+按 actionId 查已提交动作；重复执行返回原业务回执
+普通预约：写入预约意向并返回 reservationId
+试听参与：持久化请求并返回 requestId；RocketMQ 事务消息预占后异步落单
 提交事务
 ~~~
 
-actionId 在调用 draft_reservation 之前就由应用生成并持久化，草稿接口自身也按 actionId 幂等；这样草稿响应丢失不会生成多份操作。它跨恢复保持稳定，不能用模型重试时新生成的 tool_call_id 代替。已执行结果回查仍校验读取权限；新业务写入再校验当前审批/epoch/取消条件。幂等记录保留期至少覆盖运行恢复、业务重试和审计窗口。
+actionId 在草稿阶段稳定生成，草稿接口自身按 actionId 幂等；恢复时不能用新的模型 tool_call_id 代替。已执行结果回查仍校验读取权限；新业务写入再校验审批和取消条件。
 
-如果新增预约名额，使用条件更新如“余量 > 0 且版本匹配”保障不超额；去重以数据库唯一约束兜底，Redis 锁不是最终保证。外部调用不放在长数据库事务里。
+试听名额已使用 Redis Lua 预占和 MySQL 条件库存更新保障不超额，并以数据库唯一约束兜底；普通预约仍无排课时段与库存。外部调用不放在长数据库事务里。
 
 [LangGraph interrupt 文档](https://docs.langchain.com/oss/python/langgraph/interrupts) 明确恢复时会重新执行所在节点开头的逻辑，因此把草稿持久化、等待审批和真正执行业务拆成节点；不能把“先写库再 interrupt”当确认机制。
 
@@ -656,7 +607,7 @@ Java 21 虚拟线程可以作为 IO 场景的实验选项，但不自动增加�
 
 ### 13.3 消息与补偿
 
-数据库 outbox/inbox 的唯一约束、有限重试、nextRetryAt、DLQ、人工重放和 reconciliation job 都应有可见状态。重放沿用原 eventId/actionId；人工点击“重试”不是生成新的业务事实。
+Java outbox、Python Run 幂等接收、试听持久请求的唯一约束，以及有限重试、DLQ、恢复器和对账状态都应可见。重放沿用原 runId/requestId/actionId；人工点击“重试”不是生成新的业务事实。
 
 分别注入“DB commit 后发送前宕机”“broker confirm 丢失”“consumer 持久化后 ACK 前宕机”“ACK 后 worker 宕机”。解释每一步谁有责任恢复，比只画一个 MQ 图标更能证明后端能力。
 
@@ -670,54 +621,33 @@ Java 21 虚拟线程可以作为 IO 场景的实验选项，但不自动增加�
 
 ## 14. 数据模型与代码组织
 
-### 14.1 核心表草案
+### 14.1 数据所有权
 
-这些是设计字段，不是本次已创建的表。实施时用 migration、约束和契约测试固化。
-
-| 所有者 | 表/集合 | 关键字段与约束 |
+| 所有者 | 当前对象 | 约束 |
 |---|---|---|
-| Java/MySQL | workspace、membership | workspaceId、userId、role、aclVersion；成员关系唯一 |
-| Java/MySQL | conversation | id、workspaceId、ownerId、title、createdAt、status；服务端分配 ID |
-| Java/MySQL | task_request | requestId、runId、conversationId、actor、requestHash、createdAt；workspaceId+actorId+conversationId+clientRequestId 唯一 |
-| Java/MySQL | approval | actionId、runId、argsHash、toolVersion、resourceVersion、status、version、expiresAt、decidedBy |
-| Java/MySQL | run_execution_authority | runId、acceptedEpoch、cancelVersion；多 worker 业务 fencing |
-| Java/MySQL | tool_execution | tenantId、actionId、argsHash、status、resultJson、reservationId；tenantId+actionId 唯一 |
-| Java/MySQL | reservation、reservation_slot | owner、courseId、campusId、slotId、status、version、capacity；业务唯一约束和条件更新 |
-| Java/MySQL | business_outbox | eventId、aggregateId、aggregateVersion、payload、attempt、nextRetryAt、publishedAt |
-| Python/PG | inbox、runtime_job | eventId 唯一、runId、status、nextRunAt；用于持久化接收与唤醒 |
-| Python/PG | agent_run、execution_attempt | runId、状态/版本、owner、epoch、leaseUntil、budget、graphVersion、acceptedCheckpoint |
-| Python/PG | run_event | runId、seq、type、payload、messageId、timestamp；runId+seq 唯一 |
-| Python/PG | message、artifact | messageId、role、content、status、runId、revision、时间；artifact 存对象引用与 hash |
-| Python/PG | framework checkpoint 表 | 使用锁定插件的 schema；不能手写不兼容结构，lease 适配独立测试 |
-| Python/PG | document/version/job/chunk | tenant、ACL 引用、版本、状态、页码、hash、embedding/indexRevision |
-| Python/PG | memory_fact | actor、factType、value、sourceMessageId、consent、version、expiresAt |
-| Python/PG | eval_dataset/case/run/result | datasetVersion、fixtureVersion、配置 hash、结果、graderVersion、人工标注 |
-| Python/PG | runtime_outbox | 运行/文档事件的可靠通知；与 MySQL outbox 区分所有者 |
+| Java/MySQL | 用户、空间成员、课程、校区、普通预约、审批、任务接收及 outbox | 身份与业务写入只由 Java 判定；重复动作按稳定键收敛 |
+| Java/MySQL | 试听活动、参与请求、库存和 0 元订单 | Flyway V5；最终订单以本地事务、条件库存和唯一约束为准 |
+| Python/PostgreSQL | 会话、Run、消息、事件、持久作业和 LangGraph checkpoint | Run 主键与 request_hash 幂等接收；不直接写试听业务表 |
+| Python/PostgreSQL + pgvector | 文档、版本、片段、向量与评测 | 检索使用授权可见的完整版本 |
+| MinIO | 原文和对象产物 | 数据库保存对象引用；经授权读取 |
+| Redis | 登录态、试听预占和限流状态 | Redis 丢失后停受理并对账，不能直接声称订单成功 |
 
-同一个业务事实只归一个表/服务所有。完整历史在 Python/PG，Java 只保存会话元数据和授权；这意味着迁移时需要明确导入历史和代理查询，不能让两边都接收同一条消息的权威写入。
-
+详细字段、索引和状态以实际迁移、源码、[产品功能说明书](../product/产品功能说明书-研发版.md)及[试听模块设计](../modules/免费试听秒杀与Agent联动.md)为准。待建设的长期记忆、排课时段和支付不得列为现有业务表。
 ### 14.2 目录演进
 
-不要求立即把现有两仓库合成 monorepo。建议保留后端仓库和前端仓库，后端仓库新增 Python 子目录及契约/部署资源，形成一个发布单元：
+当前保持 Java、Python、Vue 三个独立仓库；Java 仓库的 Compose 使用可配置相对路径构建另外两个镜像：
 
 ~~~text
-后端仓库/
-  src/main/java/com/chy/ai/
-    identity/ conversation/ course/ reservation/
-    approval/ toolgateway/ tasksubmission/ shared/
-  agent-runtime/
-    pyproject.toml / uv.lock
-    app/api/ domain/ graphs/ nodes/ tools/ retrieval/
-    context/ persistence/ workers/ evaluation/ observability/
-    tests/
-  contracts/openapi/ events/ tool-schemas/
-  migrations/ fixtures/ evals/ benchmarks/
-  deploy/compose/ helm/ monitoring/
-  docs/architecture/ adr/ experiments/ runbooks/
-
-前端仓库/src/
-  features/workspace/ runs/ knowledge/ approvals/ evaluations/
-  stores/ composables/ services/generated/ components/
+intelligent-integrated-interaction-platform/   # Java、Flyway、Compose、模块文档
+  src/main/java/com/chy/ai/agent/
+  src/main/java/com/chy/ai/trial/
+  src/main/resources/db/migration/V5__trial_flash_sale.sql
+  deploy/rocketmq/
+intelligent-agent-runtime/                  # FastAPI、LangGraph、PG/pgvector
+  iiip_agent/
+  tests/
+web-intelligent-integrated-interaction-platform/ # Vue 工作台与审批卡
+  src/features/agent/
 ~~~
 
 不要机械把所有 Controller 拆目录。先按业务能力抽 service 接口和 DTO，控制跨模块依赖；跨仓库契约按 schemaVersion 发布，CI 校验兼容性。
@@ -839,9 +769,9 @@ Ragas 可用于部分检索/回答指标，但其分数不是项目真实业务�
 
 | Profile | 组成 | 用途 |
 |---|---|---|
-| core | Vue/反向代理、Java、Python API/worker、MySQL、PG、Redis、OSS 接口 | 主业务演示；任务调度初期可 DB polling |
-| reliable | core + RabbitMQ、多 worker | 可靠投递、租约接管、故障演练 |
-| observability/search | 按需开启 Langfuse/OTel/指标、Elasticsearch | 全链路评测与检索对照 |
+| core | Vue/Nginx、Java、Python Runtime、MySQL、PG/pgvector、Redis、RocketMQ、MinIO | 当前主业务与试听抢课所需；源码/Compose 已配置，常用整套部署待新版验收 |
+| observability | core + Langfuse、ClickHouse、Prometheus、Grafana、OTel Collector | 模型轨迹、系统指标与故障诊断 |
+| research | observability + 经过实验论证的 Elasticsearch 等可选组件 | 检索、吞吐或多模型对照，不属于当前必需部署 |
 
 Langfuse 自托管不是“只起一个容器”：需要配套 PostgreSQL、ClickHouse、Redis、对象存储等基础设施，按官方版本部署并隔离数据库/用户。[Langfuse 部署文档](https://langfuse.com/self-hosting/deployment/docker-compose)、[架构说明](https://langfuse.com/handbook/product-engineering/architecture)
 
@@ -872,121 +802,41 @@ GPU 不是完成主项目的前提。Agent 与 Embedding 使用百炼托管接�
 
 沙箱与推理可参考 [gVisor 官方文档](https://gvisor.dev/docs/)、[vLLM 官方项目](https://github.com/vllm-project/vllm)。它们在主业务未闭环前不应挤占审批、恢复和评测的时间。
 
-## 18. 研发顺序、工作量与迁移
+## 18. 基于当前版本的后续研发计划
 
-### 18.1 按里程碑推进，不一次推倒重写
+### 18.1 已有工程基础
 
-工时为单人有效研发的粗估，含主要测试/文档；会 Python/异步/数据库的程度影响很大。基础阶段约 **440–632 小时**，加约 20% 学习与返工缓冲约 **530–760 小时**。每周 20 小时约 27–38 周，每周 35 小时约 15–22 周；可选训练/沙箱等不含在内。
+Java 21/Boot 4.1.1、Python 3.13/FastAPI/LangGraph、Vue 3 工作台已组成三仓库应用。MySQL 保存业务真相，PostgreSQL/pgvector 保存运行与知识数据，Redis 负责登录态和试听原子准入，同一 RocketMQ Broker 承载 Agent 普通命令与试听事务消息。免费试听活动、参与请求、0 元订单、审批草稿和状态回查已在源码中实现；隔离真实中间件测试和 fixture 跨服务演练通过。常用完整 Compose 尚未按新版本重建验收。
 
-时间不限意味着可以做深，不意味着等完整平台做完才投递。调研日已经是 2026 年 9 月，应在首个里程碑后就用已完成的版本准备面试，后续持续更新。
+### 18.2 下一批工程任务与验收
 
-| 阶段 | 依赖 | 预计工时 | 开发内容 | 退出条件 |
-|---|---|---:|---|---|
-| M0 基线与止损 | 无 | 16–24 | 固定旧版、整理配置与测试 fixture、修上传权限/过滤/假成功、归档完整消息方案；完成百炼单 Key 的聊天/Embedding 迁移与冒烟 | 双用户隔离、旧页面可用；仅提供百炼模型 Key 即可通过 AI 启动及联调检查，baseline 能安全重复跑 |
-| M1 首个可展示闭环 | M0 | 48–64 | Python 最小状态图、Java 查询/草稿/审批/幂等写接口、Vue 运行详情、标准 SSE | 查询→引用→批准→预约回执；完整消息入库；50 条冒烟集 |
-| M2 知识工程 | M1 | 64–88 | 异步 ingestion、版本切换、结构解析、权限、混合召回/rerank 实验、页码引用 | B0–B3 数据对比；失败不暴露半成品；删除语义一致 |
-| M3 可靠运行时 | M1 | 72–104 | outbox/inbox、队列、checkpoint、审批/input 恢复、租约与 fencing、取消/对账 | 核心故障场景通过；多 worker 承诺以 saver POC 为前置 |
-| M4 评测与观测 | 从 M1 开始，M2/M3 扩充 | 56–80 | 300 样本、规则 grader、人工校准、Langfuse/trace、实验工作台 | 固定测试集的真实报告，可点击失败样本 |
-| M5 上下文与协作 | M2/M4 | 56–80 | 记忆策略、双专家实验、MCP、受控 Skills、模型预算策略；百炼内多模型路由为可选实验 | 同条件质量/成本/延迟对比；有理由决定哪些功能默认启用 |
-| M6 后端与运维 | M3/M4 | 64–96 | 压测、池与限额调优、索引/缓存、Compose/CI、备份恢复、K8s 实验 | 可重建部署、容量报告、恢复演练和 runbook |
-| M7 打磨与求职证据 | 各阶段持续整理 | 64–96 | 前端稳定性/包体、文档、架构/实验文章、演示视频、面试材料、可选开源贡献 | 陌生人能启动和验证；两版简历内容均有证据 |
-
-M0+M1 约 64–88 小时就能交付第一条纵向切片。建议先把主要能力做窄做通，再扩到多空间/多 worker；不要在 M1 同时建设完整工具市场、拖拽编辑器和训练平台。
-
-### 18.2 从旧系统到新系统的迁移步骤
-
-1. 保存 baseline tag/代码快照，导出测试 fixture，不改写原历史。后端与前端采用新分支迭代。
-2. 增加 /api/v1 契约与 feature flag，先接新课程 Agent 页面；旧聊天功能继续使用原业务接口，但模型配置一并切换到百炼 `qwen3.7-flash`。移除目标运行配置对 DeepSeek Key 的强制依赖，保留 `text-embedding-v4` / 1024 维；变量更名与适配器注入按[模型配置迁移清单](./模型服务与API配置.md)实施。
-3. 新消息进入独立归档表。旧 JDBC memory 中仍存在的消息可以导入并标明 legacy；已被窗口删除的内容无法凭空恢复，也不要伪造时间戳。
-4. PDF 从 chatId 绑定迁往 document/version；验证用户归属、原文 hash 和可用对象，再重建向量。旧向量不直接混到新索引。
-5. 将 Java CourseTools 的写方法收敛到统一命令服务，再让 Python HTTP/MCP adapter 使用同一接口，杜绝两条写路径。
-6. 小范围内部体验新链路，用相同 fixture 对比；确认运行/权限/错误契约后逐页迁前端。
-7. 可靠投递、checkpoint 和评测稳定后，停止新增旧接口调用；保留只读历史兼容期，再删除不用依赖与旧页面。
-
-Shadow 对比仅调用只读工具或模拟器，不能让新旧 Agent 都真实创建预约。迁移回退允许新接口关闭和旧版只读访问；已有业务结果仍以真实业务表为准。
-
-### 18.3 第一批可以直接转成 issue 的任务
-
-| ID | 任务 | 验收 |
+| 优先级 | 工作 | 可复核的完成条件 |
 |---|---|---|
-| P-01 | 上传资源归属、ID 与过滤白名单 | 两账号交叉上传/查询失败且无污染 |
-| P-02 | 统一错误协议和前端上传状态 | Result.fail 不再显示 READY |
-| P-03 | 正确的历史模型与迁移 fixture | 60 轮后早期消息仍能读取；窗口只影响 prompt |
-| P-04 | OpenAPI 与 SSE schema | 前后端类型一致，半包/UTF-8/重复事件通过 |
-| P-05 | run 创建与幂等接收 | 重复请求只产生同一 run，相同键不同 body 返回冲突 |
-| P-06 | 查询工具 DTO 与有限 ReAct | 参数白名单，预算停止，无界查询被拒绝 |
-| P-07 | approval + tool_execution 事务 | 参数篡改、过期、重复点击、响应丢失测试通过 |
-| P-08 | 文档版本化 ingestion | 中间失败时旧版本可用，新版可重试 |
-| P-09 | PostgresSaver 与恢复 POC | 进程重启回到已持久化节点；无重复业务效果 |
-| P-10 | 审批/input 唤醒与取消 | 等待过程中重启仍能恢复，取消状态可观测 |
-| P-11 | 50 条初始评测和 B0 报告 | 数据/配置固定，真实记录成功与失败 |
-| P-12 | 统一 Vue run store | 切页/刷新/重连不串消息，结果以业务事件为准 |
+| P0 | 升级常用完整部署 | 备份并盘点旧消息、重建三服务、检查 RocketMQ Topic/Group、Flyway V5、API/审批/订单及健康状态；保留无敏感信息的操作记录 |
+| P0 | 新版真实模型与浏览器验收 | 在独立测试账号与合成数据中由真实模型查活动、起草、用户批准，最终由 Java 查询订单；区别模型答复和业务状态 |
+| P0 | 新版灾备演练 | Broker、Redis、MySQL、Python 分别故障；验证 UNKNOWN 回查、请求恢复、预占补偿、对账和禁止缓存丢失后的自动重建 |
+| P1 | 端到端自动化 | 保留 Java 真实中间件回归、Python 图/审批回归和 Vue 类型检查；补浏览器场景与统一 CI 报告 |
+| P1 | 容量与性能 | 用独立环境分别测受理、预占、落单与查询的吞吐、p50/p95/p99、锁等待、Broker 积压、CPU/内存；没有测量前不写 QPS 结论 |
+| P1 | 完整前端体验 | 试听活动列表、直接参与、异步状态与本人结果；OWNER 发布/暂停与对账；所有按钮遵守权限和幂等规则 |
+| P2 | RAG 与 Agent 质量 | 建版本化 300 样本集，对检索/引用/审批/工具选择进行人工标注、消融和成本分析；实验数据与模型配置一起归档 |
+| P2 | 高可用与安全 | Broker 副本、ACL/TLS、Redis 隔离、worker fencing、审计留存及恢复演练；多副本上线需单独验证 |
 
-M3 的多 worker fencing 应单独建研究型 issue，先证明事务适配可行再承诺期限。复杂点提前做小实验，比最后才发现框架语义不支持更节省时间。
+时间不限时也应按真实证据推进：先完成完整部署与新版 E2E，再量化性能与质量，最后考虑 Elasticsearch、MCP、受控 Skills、多 Agent 或本地推理。每新增组件都应解释解决了什么已测量的问题。
 
-## 19. 如何把工程成果变成面试亮点
+## 19. 面试展示与技术证据
 
-### 19.1 3–5 分钟演示
+演示顺序：工作空间和知识引用 → 普通预约审批与 actionId 幂等 → 试听活动发布 → Agent 查询并生成 claim_trial 草稿 → 人工批准 → 展示 HTTP 202 与 PENDING/RESERVED → 回查 SUCCEEDED + orderId 或 REJECTED → 展示对账、故障恢复和监控。独立测试的 40 人竞争 8 个名额、成功消息重复消费 3 次最终 8 单，是正确性证据，不是生产用户量或吞吐量。
 
-| 时间 | 演示 | 对应能力 |
-|---|---|---|
-| 0:00–1:15 | 带约束提问→检索与工具→两套方案→点击 PDF 页码 | Agent/RAG、证据与业务抽象 |
-| 1:15–2:00 | 显示预约草稿→明确确认→真实预约号 | 审批、工具 schema、服务端权限 |
-| 2:00–3:00 | 在预设故障点杀 worker 或模拟提交响应丢失→恢复→仍是一单 | checkpoint、幂等、事务边界 |
-| 3:00–4:00 | 打开固定评测集的版本对比与失败案例 | 实验、质量/成本取舍与归因 |
-| 4:00–5:00 | 两用户隔离/恶意资料测试，查看跨栈 trace | 后端安全、可观测与工程完整性 |
+**AI Agent 岗表述**：独立 FastAPI/LangGraph Runtime 负责知识检索、证据、审批暂停与恢复；将试听参与建模为有固定 actionId 的人工审批工具，跨运行查询 Java 最终结果。明确运行完成、审批执行和订单成功是不同状态。
 
-故障注入只能在显式 demo/test 环境开放，避免把 kill/篡改 fixture 的入口放进正常业务页面。准备预录视频和离线 mock provider，以应对现场网络不稳定；清楚标明录像与 mock。
+**后端岗表述**：Java 21/Boot 4.1.1 服务中以 MySQL 持久请求、Redis Lua 预占和 RocketMQ 事务消息构成异步抢课链路；消费者以条件库存和唯一键创建 0 元订单，使用事务回查、重试、补偿和只读对账处理不确定状态。同一 Broker 还承载 Agent 普通命令，Java 消费者桥接 Python HTTP 幂等接收。
 
-### 19.2 两种简历写法，完成后再填写
-
-项目名建议：**企业知识与业务办理 Agent 平台**。副标题可以保留原项目名，说明是在现有系统上持续研发。
-
-**Agent 岗版本示例：**
-
-> 基于 Java 与 Python 构建课程咨询和预约 Agent，设计有界执行图、上下文管理、混合检索和证据引用；通过持久化 checkpoint 与服务端审批支持任务中断恢复。构建 [N] 条版本化业务评测任务，对比 [策略 A/B]，任务成功率由 [实测 A] 提升至 [实测 B]，单成功任务成本为 [实测值]。
-
-**后端岗版本示例：**
-
-> 负责 Agent 业务后端及任务可靠性设计，采用 outbox/inbox、数据库幂等约束和审批参数绑定，处理重复投递及“业务已提交、运行时未保存”的恢复场景；通过 [N] 组故障注入验证同一动作无重复业务效果，并在 [硬件/负载] 下测得核心 API p95 [实测值]。
-
-只保留自己已实现、理解且有报告支持的内容。不能把表中的目标换进方括号，更不能写真实用户数/生产流量/收益等未经发生的经历。
-
-### 19.3 面试官可能深入追问的 12 个问题
-
-1. 为什么用 Agent，哪些步骤必须是确定性 Workflow？
-2. 为什么选 Java + Python，代价是什么，为什么不全部 Java？
-3. checkpoint 能恢复什么？为什么仍可能重复调用写工具？
-4. actionId 如何跨重试稳定？与 tool_call_id 有何区别？
-5. 审批后参数或库存变了怎么办？取消时已经提交怎么办？
-6. 为什么 Redis 锁或消息 ACK 不能单独保证业务幂等？
-7. 多 worker 租约过期后，旧 worker 写 checkpoint 怎么处理？
-8. 文档撤权、版本更新和向量索引切换怎样不暴露半成品？
-9. dense、BM25、reranker 分别解决什么，哪些查询没有改善？
-10. 多 Agent 比单 Agent 多花多少成本，什么时候应关闭？
-11. 成功率的分母是什么？为何不能只让 LLM 自评？
-12. 性能瓶颈在模型、排队、数据库还是渲染？如何从 trace 证明？
-
-准备答案的方式是关联一张架构图、一段核心实现、一个失败案例和一份实测报告，而不是背框架术语。
-
-### 19.4 最终应交付的工程资产
-
-- 可部署的前后端与 Agent runtime、受控演示账号/fixture、环境样例与初始化脚本。
-- OpenAPI、事件与工具 schema、数据库迁移、关键 ADR、权限与状态机设计。
-- 数据集说明、baseline/消融报告、错误样例、性能与故障报告。
-- CI 记录、可重复的测试命令、运行手册、备份恢复记录。
-- 3–5 分钟演示视频、简短项目说明，以及能展示核心流程的截图。
-- 一到两篇有代码与实验支撑的技术文章，例如“业务提交与 Agent checkpoint 不一致时如何恢复”“中文业务 RAG 的失败归因与消融实验”。
-
-求职准备持续覆盖 Java 并发/JVM、MySQL 索引事务、Redis、MQ、HTTP/SSE、Python asyncio、数据结构算法。该项目能帮助解释真实问题，但不会替代基础笔试与面试准备。
-
+简历只写已验证内容，注明 fixture 模型和隔离环境。新版真实模型、常用完整 Compose 验收、生产级容量和高可用尚未完成，不能用旧版测试或设计目标替代。演示脚本、岗位措辞及证据入口见[项目演示与面试证据](项目演示与面试证据.md)、[试听模块验证记录](../modules/免费试听秒杀验证记录.md)。
 ## 20. 配套调研、审计和阅读顺序
 
 建议先读本文第 1、5、6、18、19 节确认产品和投入，再按研发模块读其余章节。
 
 - [2027 岗位调研：8 个官方 2027 完整 JD 与 5 个实习/社招参照](2027岗位调研.md)
-- [后端现状审计：全量源码与准确位置](后端现状审计.md)
-- [前端现状审计：契约、状态、构建验证与位置](前端现状审计.md)
 - [技术资料与开源项目阅读清单](技术资料与开源阅读清单.md)
 - [模型服务与 API 配置：百炼单 Key 决策、迁移与验收](./模型服务与API配置.md)
 - [中间件与基础设施清单](./中间件与基础设施清单.md)

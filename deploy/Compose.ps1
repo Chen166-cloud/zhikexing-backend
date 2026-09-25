@@ -13,7 +13,7 @@ if ($Wsl) {
     $linuxRepository = $linuxRepository.Trim()
     $originalWslEnv = $env:WSLENV
     # 只转发明确允许的模型配置，密钥不写入命令行和仓库文件。
-    $env:WSLENV = (@($originalWslEnv -split ':') + @('DASHSCOPE_API_KEY/u', 'AI_PROVIDER/u', 'RABBITMQ_ENABLED/u', 'AGENT_RUNTIME_IMAGE/u') |
+    $env:WSLENV = (@($originalWslEnv -split ':') + @('DASHSCOPE_API_KEY/u', 'AI_PROVIDER/u', 'ROCKETMQ_ENABLED/u', 'AGENT_RUNTIME_IMAGE/u') |
         Where-Object { $_ } | Select-Object -Unique) -join ':'
     try { & wsl @distributionArguments --user root --cd $linuxRepository --exec docker compose @ComposeArguments }
     finally { $env:WSLENV = $originalWslEnv }

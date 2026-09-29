@@ -73,7 +73,8 @@ class SnowflakeBusinessIntegrationTest {
         var inventory = mock(TrialInventory.class);
         when(inventory.allow(actor)).thenReturn(true);
         when(inventory.reserve(anyString(), anyString(), eq(actor))).thenReturn("RESERVED");
-        var trials = new TrialService(jdbc, tx, business, inventory, ids);
+        var trials = new TrialService(jdbc, tx, business, inventory, ids,
+                org.mockito.Mockito.mock(com.chy.zhikexing.catalog.CourseCatalogService.class));
         String campaign =
                 trials.create(
                                 actor,

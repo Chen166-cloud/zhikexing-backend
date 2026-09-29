@@ -72,7 +72,8 @@ class TrialIntegrationTest {
         ids = new SnowflakeIds(888);
         business = new AgentBusinessService(jdbc, tx, json, ids);
         inventory = new TrialInventory(redis);
-        service = new TrialService(jdbc, tx, business, inventory, ids);
+        service = new TrialService(jdbc, tx, business, inventory, ids,
+                org.mockito.Mockito.mock(com.chy.zhikexing.catalog.CourseCatalogService.class));
         agent = new TrialAgentService(jdbc, tx, business, service, json, ids, true);
         jdbc.update(
                 "INSERT IGNORE INTO user_info(id,user_name,password) VALUES(?,'trial-test-owner','unused')",

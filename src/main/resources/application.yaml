@@ -53,6 +53,21 @@ spring:
 server:
   port: ${SERVER_PORT:8080}
 app:
+  catalog-cache:
+    local-ttl: ${CATALOG_LOCAL_TTL:10s}
+    shared-ttl: ${CATALOG_SHARED_TTL:60s}
+    max-entries: ${CATALOG_MAX_ENTRIES:1000}
+    lock-wait: ${CATALOG_LOCK_WAIT:1s}
+  auth:
+    global-attempts: ${AUTH_GLOBAL_ATTEMPTS:20}
+    global-window-seconds: ${AUTH_GLOBAL_WINDOW_SECONDS:1}
+    account-attempts: ${AUTH_ACCOUNT_ATTEMPTS:10}
+    account-window-seconds: ${AUTH_ACCOUNT_WINDOW_SECONDS:60}
+    max-concurrent: ${AUTH_MAX_CONCURRENT:4}
+    failure-threshold: ${AUTH_FAILURE_THRESHOLD:5}
+    failure-window-seconds: ${AUTH_FAILURE_WINDOW_SECONDS:600}
+    cooldown-seconds: ${AUTH_COOLDOWN_SECONDS:60}
+    max-sessions: ${AUTH_MAX_SESSIONS:3}
   ids:
     # Assign a distinct value to every running Java instance (0-1022); 1023 is reserved for migrations.
     node-id: ${SNOWFLAKE_NODE_ID:0}

@@ -2,12 +2,12 @@ package com.chy.zhikexing.config;
 
 import com.chy.zhikexing.util.LoginInterceptor;
 import com.chy.zhikexing.util.RefreshTokenInterceptor;
+import com.chy.zhikexing.auth.AuthSessionService;
 
 import lombok.RequiredArgsConstructor;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.web.servlet.config.annotation.CorsRegistry;
 import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
@@ -16,7 +16,7 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 @RequiredArgsConstructor
 public class MvcConfiguration implements WebMvcConfigurer {
 
-    private final StringRedisTemplate stringRedisTemplate;
+    private final AuthSessionService sessions;
 
     @Value("${app.cors-origins}")
     private String[] corsOrigins;
@@ -28,14 +28,14 @@ public class MvcConfiguration implements WebMvcConfigurer {
                 .allowedOrigins(corsOrigins)
                 .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS")
                 .allowedHeaders("*")
-                .exposedHeaders("Content-Disposition");
+                .exposedHeaders("Content-Disposition", "Retry-After");
     }
 
     @Override
     public void addInterceptors(InterceptorRegistry registry) {
-        registry.addInterceptor(new RefreshTokenInterceptor(stringRedisTemplate))
+        registry.addInterceptor(new RefreshTokenInterceptor(sessions))
                 .addPathPatterns("/**")
-                .excludePathPatterns("/internal/**", "/error", "/actuator/**")
+                .excludePathPatterns("/user/login", "/user/register", "/internal/**", "/error", "/actuator/**")
                 .order(0);
         registry.addInterceptor(new LoginInterceptor())
                 .excludePathPatterns(

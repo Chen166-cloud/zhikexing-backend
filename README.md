@@ -1,6 +1,6 @@
 # 知课行 · AI 课程服务平台
 
-知课行面向课程咨询、知识问答、预约意向和热门课程免费试听。用户从登录页进入产品首页，再到 Agent 工作台查看资料引用、审批草稿和办理结果；Vue 展示过程，Java 掌握身份、库存与订单，独立 Python 服务运行可恢复的 LangGraph 任务。真实模型模式通过一把百炼 Key 使用 `qwen3.7-flash` 和 `text-embedding-v4`（1024 维）；完整 Compose 联调使用 fixture 模型。
+知课行面向课程浏览与咨询、知识问答、预约意向和热门课程免费试听。用户登录后在课程广场搜索、筛选和查看详情，再进入 Agent 工作台咨询、查看引用、确认审批与办理结果；Vue 展示过程，Java 掌握身份、库存与订单，独立 Python 服务运行可恢复的 LangGraph 任务。真实模型模式通过一把百炼 Key 使用 `qwen3.7-flash` 和 `text-embedding-v4`（1024 维）；完整 Compose 联调使用 fixture 模型。
 
 「知课行」是当前网站与产品展示名。Java Maven 模块为 `zhikexing-backend`，Python 包为 `zhikexing_agent`，Vue npm 包为 `zhikexing-web`。三个项目副本的 Git `origin` 分别指向对应的知课行 Gitee 地址；Compose 默认使用知课行命名的三个同级目录。
 
@@ -34,9 +34,15 @@ Compose 默认使用 `../zhikexing-agent-runtime` 和 `../zhikexing-web`，相�
 
 ## 业务闭环
 
+[课程广场与两级缓存](docs/modules/课程目录与两级缓存.md)提供课程搜索、筛选、分页和详情，并可向 Agent 预填咨询。Java 共用课程查询服务，以 Caffeine + Redis 缓存固定目录和课程展示数据，Redisson 按缓存键协调跨实例重建；库存、鉴权、会话和审批继续使用原有流程。课程价格单位为人民币元，学习周期为天。
+
+课程增量验证（2026-09-29）：新增 14 项 Java 测试通过，包含真实 Redis、MySQL、两个独立 Java 进程与缓存命中后的鉴权；前端构建、Agent 14 项回归和浏览器课程查询/咨询预填检查通过。三个应用镜像已重建，完整 `app`、`observability` Compose 启动正常；8088 同源 API 实测通过课程列表、校区、去空白搜索、详情、401/404，并观测到两级缓存命中和回源指标。真实浏览器完成注册、退出、重新登录、课程搜索、详情和 Agent 咨询预填，预填未创建会话或任务，页面与控制台无错误或警告。测试不代表生产吞吐指标，部署范围见[部署验证记录](docs/deployment/Docker部署验证记录.md)。
+
 [免费试听名额秒杀与 Agent 联动模块](docs/modules/免费试听秒杀与Agent联动.md)在 `/agent` 工作台提供“免费试听”标签：成员浏览活动、直接抢课并查看本人持久参与记录，刷新或换设备后可继续追踪；空间 OWNER 选择课程和校区，创建、发布、暂停活动并查看对账。用户也可在对话中批准 Agent 的试听申请草稿。RocketMQ 事务回调通过 Redis Lua 预占名额，消费者异步创建 0 元试听订单。持久请求、MySQL 条件库存和唯一约束支持重试恢复；HTTP 202 仅表示受理，只有请求最终 `SUCCEEDED` 且有 `orderId` 才表示抢到名额。[验证记录](docs/modules/免费试听秒杀验证记录.md)列出实测范围。
 
 验证边界（2026-09-26）：隔离 MySQL 8.4.8 的 Flyway V1–V7 迁移与雪花主键业务集成、Java 单测及前端构建通过；隔离真实 Redis/RocketMQ 的 15+3 项测试通过。知课行完整 Compose 已健康启动，`Verify-Compose.ps1` 在真实 MySQL、Redis、RocketMQ、Java、Python 与 fixture 模型下完成直接抢课和 Agent 审批落单。Playwright CLI 经真实 8088 入口完成注册、登录、首页、Agent 工作台及试听页面操作，控制台没有错误。真实百炼模型、真实 API 下 MEMBER 权限与浏览器内 Agent 审批、跨设备和网络故障仍未验收；隔离并发测试不代表生产吞吐。
+
+登录保护增量（2026-09-29）：登录/注册共享全局 20 次/秒和每实例 4 个认证并发槽，账号密码校验最多 10 次/分钟；10 分钟内失败 5 次后冷却 60 秒，每账号最多保留 3 个登录会话。Java 新增 10 项流程测试和 12 项真实 Redis 测试通过，前端构建及 mock API 倒计时/401 跳转检查通过，Agent 14 项隔离回归通过。完整 Compose 已更新；8088 真实 API 验证第 4 个会话淘汰最早会话、退出后 401，以及失败冷却期间正确密码仍返回 429 和 `Retry-After`。升级前 Token 需重新登录，浏览器内会话淘汰与任务续跑仍未联调。参数和复现步骤见[登录保护](docs/modules/登录保护.md)。
 
 1. 上传 PDF/TXT/Markdown，原文件存入 MinIO，异步解析、切块和向量化，完整版本发布后才参与检索。
 2. Agent 查询授权知识库、课程和校区，展示检索证据与工具结果。
@@ -62,7 +68,8 @@ flowchart LR
 
 ## 技术与工程约束
 
-- Java 21、Spring Boot 4.1.1、Spring AI 2.0.1、MyBatis-Plus 3.5.17、Flyway；Redis 登录态、BCrypt 密码渐进升级。
+- Java 21、Spring Boot 4.1.1、Spring AI 2.0.1、MyBatis-Plus 3.5.17、Flyway；Redis 登录态、BCrypt 密码渐进升级。[登录保护](docs/modules/登录保护.md)提供校验前限流、认证并发上限、失败冷却和每账号会话数量限制。
+- Caffeine + Redis 缓存课程默认列表、固定目录和详情；Redisson 按键协调跨实例回源。网页、Agent 工具与试听选项共用课程查询服务，筛选搜索直接访问 MySQL，详见[课程目录与两级缓存](docs/modules/课程目录与两级缓存.md)。
 - MySQL 业务表的新写入主键采用应用生成的雪花 ID，默认单实例节点号 0；多 Java 写入实例须配置互不冲突的 `SNOWFLAKE_NODE_ID`（0–1022，1023 留给迁移与演示数据）。Flyway V1–V7 管理业务结构，聊天记录和 PDF 文件表名分别为 `zhikexing_chat_record`、`zhikexing_pdf_file`；应用表不设物理外键，服务层校验逻辑关联，数据库唯一键与事务约束保留。
 - Python 3.13、FastAPI、LangGraph、PostgreSQL checkpoint、pgvector；通过 HTTP 幂等接收运行命令。
 - Vue 3、TypeScript、Pinia、Naive UI；可取消、按事件序号恢复的 SSE。
@@ -96,6 +103,7 @@ Docker Desktop 使用同一初始化脚本，跳过 `Start-WslEngine.ps1`，Comp
 |---|---|
 | 知课行登录 / 注册 | http://localhost:8088/login · http://localhost:8088/register |
 | 产品首页（登录后） | http://localhost:8088/ |
+| 课程广场（登录后） | http://localhost:8088/courses |
 | Agent 工作台（含“免费试听”标签） | http://localhost:8088/agent |
 | Java API | http://localhost:18080 |
 | Java 健康检查 | 容器内 `http://localhost:8081/actuator/health`，管理端口不映射到宿主机 |

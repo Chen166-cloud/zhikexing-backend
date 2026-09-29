@@ -1,8 +1,10 @@
 # 免费试听名额秒杀与 Agent 联动
 
-文档核对日期：2026-09-26。本文说明知课行试听活动的页面入口、业务规则、异步状态与服务端一致性边界。岗位依据见[技术与岗位调研](../research/2026-09-25-秒杀模块岗位与技术调研.md)。
+文档核对日期：2026-09-29。本文说明知课行试听活动的页面入口、业务规则、异步状态与服务端一致性边界。岗位依据见[技术与岗位调研](../research/2026-09-25-秒杀模块岗位与技术调研.md)。
 
 验证边界：Flyway V1–V7 新库迁移、Java 雪花发号与事务协议检查、前端构建通过；隔离真实 Redis/RocketMQ 的试听 15 项和 Agent 桥接 3 项测试通过。`zhikexing` 完整 Compose 的 fixture 跨服务烟测经 Nginx 入口完成直接抢课、异步零元订单及 Agent 审批落单；真实浏览器完成注册、登录、首页、工作台和试听页面导航。真实 API 的 MEMBER 浏览器权限、浏览器内 Agent 审批、跨设备、网络故障和百炼模型流程仍需单独验收，详见[验证记录](免费试听秒杀验证记录.md)。
+
+2026-09-29 更新登录保护与课程缓存后，完整 Compose 已重建，直接抢课和 Agent fixture 审批落单再次通过，两场活动的 Redis/MySQL 库存与订单账一致。课程与校区选项已接入共用目录服务，结果见[部署验证记录](../deployment/Docker部署验证记录.md)。
 
 ## 1. 业务范围与工程选择
 
@@ -34,7 +36,7 @@
 | PostgreSQL / LangGraph checkpoint | Agent 运行、事件与图恢复 | 不保存试听业务库存或订单真相 |
 | Prometheus / Grafana | 消费重试、事务 UNKNOWN、Broker 指标和运行观测 | `trial.*` Micrometer 指标 |
 
-模块不依赖 Redisson 分布式锁、Seata、另一种 MQ 或独立向量库。MySQL 行锁只解决本数据库事务中的串行化；Lua 解决单 Redis 槽内原子决策，两者不是跨系统原子事务。
+创建活动的课程与校区选项使用[课程目录与两级缓存](课程目录与两级缓存.md)：先校验空间成员，再读取 Caffeine/Redis，未命中时由 Redisson 协调目录回源。试听库存预占仍通过 Lua，最终库存与订单通过 MySQL 事务更新。MySQL 行锁解决本数据库事务中的串行化，Lua 解决单 Redis 槽内原子决策，两者不是跨系统原子事务。
 
 Java 使用原生 RocketMQ remoting client 与 Spring Boot 4 集成。Broker 镜像为 5.5.0，客户端为 5.5.1；该组合已在隔离真实 Broker 中完成 15+3 项专项回归。
 

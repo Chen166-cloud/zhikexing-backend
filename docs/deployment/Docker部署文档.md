@@ -4,6 +4,8 @@
 
 **验证边界（2026-09-26）**：`zhikexing` 完整 Compose 已在 WSL Docker Engine 中健康启动；`Verify-Compose.ps1` 经 Vue/Nginx 入口验证真实 MySQL、Redis、RocketMQ、Java/Python HTTP、试听事务消息、异步订单与 Agent fixture 审批落单。隔离真实中间件测试分别通过 15 项试听与 3 项 Agent 桥接用例。浏览器从注册进入首页、工作台和免费试听页面，控制台没有错误。真实模型、真实 API 下 MEMBER 浏览器权限、浏览器内 Agent 审批、备份恢复和容量指标仍需单独验证，详见[部署验证记录](Docker部署验证记录.md)。
 
+2026-09-29 已重建 Java、Python、Vue 三个应用镜像，完整 `app`、`observability` Compose 启动正常，保留原有数据卷和 `AI_PROVIDER=fixture`。20 个服务中 17 个常驻服务运行（15 个有健康检查且 healthy，Worker 与 Collector 无 Docker 健康检查，Collector HTTP 健康接口返回 200），3 个初始化服务均成功退出。经 8088 同源 API 复验课程查询、会话上限、退出失效和失败冷却；`Verify-Compose.ps1` 的直接抢课、幂等重试、Agent 审批落单及数据库/Redis 对账均通过。真实浏览器完成注册、退出、重新登录、课程搜索、详情和 Agent 咨询预填，预填没有创建会话或任务，页面与控制台无错误或警告。五个 Prometheus 抓取目标全部正常。外部模型效果、浏览器内会话淘汰与任务续跑、MEMBER 浏览器权限、备份恢复和容量指标仍需单独验证，详见[部署验证记录](Docker部署验证记录.md)。登录升级步骤见下方“登录保护配置与升级”。
+
 ## 1. 组成与端口
 
 默认启动核心中间件，`observability` 增加观测服务，`app` 增加 Java、Python 和 Vue/Nginx。全部宿主端口绑定 `127.0.0.1`，服务之间使用 Compose DNS。原本机 MySQL 3306 和 Redis 6379 不受影响。
@@ -12,7 +14,7 @@
 |---|---|---|---|
 | MySQL | 13306 | mysql:3306 | 登录、权限、课程、预约、审批、outbox、试听活动/请求/订单 |
 | PostgreSQL + pgvector | 15432 | postgres:5432 | Agent 状态、消息、知识、向量、评测 |
-| Redis | 16379 | redis:6379 | 登录态、缓存、试听库存预占；AOF + noeviction |
+| Redis | 16379 | redis:6379 | 登录会话、认证频率与失败冷却、缓存、试听库存预占；AOF + noeviction |
 | RocketMQ NameServer / Broker | 9876 / 10911、10909 | rocketmq-nameserver:9876 / rocketmq-broker:10911 | 普通命令与试听事务消息；Broker 5.5.0，client 5.5.1 |
 | MinIO | S3 19000，控制台 19001 | minio:9000 | 文档与 Langfuse 对象；不同 bucket 隔离 |
 | Langfuse Web / Worker | Web 13000 | langfuse-web:3000 | 模型轨迹与评测观测 |
@@ -23,7 +25,7 @@
 | OTel Collector | HTTP 14318，gRPC 14317，健康 13133 | otel-collector:4318 / 4317 | OTLP 接收与指标出口 |
 | Java | 18080 | backend:8080 | 外部 API、认证授权、业务工具 |
 | Python Runtime | 18000 | agent-runtime:8000 | 内部 Agent API 和持久化作业执行 |
-| 知课行 Vue / Nginx | 8088 | frontend:80 | `/login`、`/register`、`/` 首页、`/agent` 工作台与“免费试听”标签；同源 API 与 SSE 反向代理 |
+| 知课行 Vue / Nginx | 8088 | frontend:80 | `/login`、`/register`、`/` 首页、`/courses` 课程广场、`/courses/:id` 详情、`/agent` 工作台与“免费试听”标签；同源 API 与 SSE 反向代理 |
 
 默认 `ROCKETMQ_ENABLED=true`。Java outbox 向 `zhikexing-agent-commands` 投递普通消息，同一 run 固定队列；Java 顺序消费者经 HTTP 将命令交给 Python，只有 Python 幂等接收并提交 Run/取消状态后返回 2xx 才确认。Python 不依赖 RocketMQ 原生库。免费试听使用 `zhikexing_trial_claims` 事务 Topic，生产组 `zhikexing_trial_tx_v1`，消费组 `zhikexing_trial_order_v1`；半消息成功后才执行 Lua 预占，事务回查根据共享持久记录决定提交/回滚/未知。普通命令重试耗尽进入 `%DLQ%zhikexing-agent-command-consumer`，试听为 `%DLQ%zhikexing_trial_order_v1`，由运维对账和恢复任务处理。设为 `false` 仅让 Agent outbox 使用 HTTP；试听不能静默降级成同步扣库存。模型遥测经 OTLP 接入 Langfuse，实际链路验证见验证记录。Elasticsearch、LiteLLM、vLLM、Temporal 属于方案按需扩展项，本部署不默认安装。
 
@@ -119,7 +121,35 @@ Invoke-WebRequest http://127.0.0.1:8088/agent
 
 `.env` 可配置 Runtime 运行限制：`AGENT_COST_LIMIT_CNY=0.10`、`AGENT_TOKEN_LIMIT=40000`、`AGENT_RUN_TIMEOUT_SECONDS=240`、`AGENT_MAX_PARALLEL=4`。费用限制在下一次模型调用前检查，单次调用可能超过剩余额度，并非云平台的硬计费上限。修改运行图、Prompt、工具 schema 或模型配置后，旧运行可能因版本不兼容拒绝续跑，应先结束或明确迁移存量运行再升级。
 
-打开 `http://localhost:8088/login` 登录知课行，进入 `/` 产品首页，再从导航进入 `/agent` 工作台；左侧“免费试听”标签提供活动浏览、直接抢课、本人结果追踪及 OWNER 管理。Langfuse 初始账号为 `.env` 中 `LANGFUSE_ADMIN_EMAIL` 和 `LANGFUSE_ADMIN_PASSWORD`；Grafana 账号为 `admin`，密码对应 `GRAFANA_PASSWORD`；MinIO 对应 `S3_ACCESS_KEY_ID` / `S3_SECRET_ACCESS_KEY`。这些随机密码只在本机 `.env` 查看。
+打开 `http://localhost:8088/login` 登录知课行，进入 `/` 产品首页。导航中的 `/courses` 提供课程搜索、筛选、分页和详情，详情页可向 `/agent` 预填咨询；工作台“免费试听”标签提供活动浏览、直接抢课、本人结果追踪及 OWNER 管理。Langfuse 初始账号为 `.env` 中 `LANGFUSE_ADMIN_EMAIL` 和 `LANGFUSE_ADMIN_PASSWORD`；Grafana 账号为 `admin`，密码对应 `GRAFANA_PASSWORD`；MinIO 对应 `S3_ACCESS_KEY_ID` / `S3_SECRET_ACCESS_KEY`。这些随机密码只在本机 `.env` 查看。
+
+### 登录保护配置与升级
+
+登录/注册默认共享 20 次/秒的全局固定窗口和每 Java 实例 4 个认证并发槽；每账号最多 10 次密码校验/分钟，10 分钟内失败 5 次后冷却 60 秒。每账号最多保留 3 个登录会话，空闲 24 小时过期。`.env.example` 中的 `AUTH_*` 变量可调整这些值，均须为正整数；完整表格见[登录保护](../modules/登录保护.md)。`AUTH_MAX_CONCURRENT` 与 Python 的 `AGENT_MAX_PARALLEL` 控制不同服务的并发。
+
+已有完整 Compose 环境仅更新登录保护时，可在 Java 仓库根目录重建前后端：
+
+```powershell
+./deploy/Compose.ps1 -Wsl --profile app up -d --build --no-deps backend frontend
+./deploy/Compose.ps1 -Wsl exec -T backend curl -fsS http://localhost:8081/actuator/health
+```
+
+Docker Desktop 使用同一命令并去掉 `-Wsl`。登录保护升级使用新的 `login:v2:*` 会话索引，不涉及数据库表迁移；旧 Token 在新后端失效，用户需重新登录，旧 Redis 键沿原 TTL 到期。单独更新登录保护无需重建 Runtime；本次完整更新还包含课程工具字段说明，因此已按前文完整部署命令重建三个应用。
+
+登录/注册超限或冷却返回 429，并发满或依赖故障返回 503，均带 `Retry-After`；前端据此显示倒计时并暂停提交。部署后应核对新页面已加载，旧 Token 请求返回 401，以及登录成功后仍能进入首页与工作台。退出或会话淘汰不会取消已提交的 Agent 任务。
+
+### 课程缓存配置
+
+课程广场、Agent 课程工具和试听创建表单共用 Java 课程目录服务。Caffeine 与 Redisson 已打入后端镜像，复用现有 Redis 的地址、认证与数据库，无需新增容器或业务表。`.env` 中可设置：
+
+| 环境变量 | 默认值 | 用途 |
+|---|---|---|
+| `CATALOG_LOCAL_TTL` | `10s` | Caffeine 本地过期时间 |
+| `CATALOG_SHARED_TTL` | `60s` | Redis 共享缓存过期时间 |
+| `CATALOG_MAX_ENTRIES` | `1000` | 每实例本地缓存条目上限 |
+| `CATALOG_LOCK_WAIT` | `1s` | Redisson 重建锁等待时间 |
+
+参数由 Compose 传入 `app.catalog-cache`，修改后重建后端容器生效。缓存覆盖默认首页、固定目录和课程详情，筛选查询直接访问 MySQL；课程修改后展示允许 TTL 延迟。命中、回源指标及两级缓存边界见[模块说明](../modules/课程目录与两级缓存.md)。
 
 ## 4. 数据初始化与持久化
 

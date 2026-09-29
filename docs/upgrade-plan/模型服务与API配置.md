@@ -1,6 +1,6 @@
 # 模型服务与 API 配置
 
-核对日期：2026-09-25。Java/Python 服务支持百炼模型配置，Vue 不持有模型凭据。完整 Compose 已以 `AI_PROVIDER=fixture` 启动并通过跨服务烟测；真实百炼模型调用效果尚未验收。
+核对日期：2026-09-29。Java/Python 服务支持百炼模型配置，Vue 不持有模型凭据。本次完整 Compose 重建沿用 `AI_PROVIDER=fixture`，Runtime 健康检查确认该配置，并通过真实中间件的跨服务烟测；完整 Compose 中的百炼模型效果尚未验收，结果见[部署验证记录](../deployment/Docker部署验证记录.md)。
 
 | 用途 | 当前配置 | 边界 |
 |---|---|---|

@@ -1,6 +1,8 @@
 package com.chy.zhikexing.service.impl;
 
 import com.baomidou.mybatisplus.spring.service.impl.ServiceImpl;
+import com.chy.zhikexing.auth.AuthLoginGuard;
+import com.chy.zhikexing.auth.AuthSessionService;
 import com.chy.zhikexing.entity.po.UserInfo;
 import com.chy.zhikexing.entity.vo.LoginFormDTO;
 import com.chy.zhikexing.entity.vo.Result;
@@ -13,18 +15,10 @@ import com.chy.zhikexing.util.TokenUtils;
 import com.chy.zhikexing.util.UserHolder;
 import lombok.RequiredArgsConstructor;
 import org.springframework.dao.DuplicateKeyException;
-import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
 import java.time.LocalDateTime;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.UUID;
-import java.util.concurrent.TimeUnit;
-
-import static com.chy.zhikexing.contants.RedisConstants.LOGIN_USER_KEY;
-import static com.chy.zhikexing.contants.RedisConstants.LOGIN_USER_TTL;
 
 @Service
 @RequiredArgsConstructor
@@ -33,7 +27,8 @@ public class UserInfoServiceImpl extends ServiceImpl<UserInfoMapper, UserInfo> i
     private static final int MAX_USERNAME_LENGTH = 11;
     private static final int MAX_NICKNAME_LENGTH = 20;
 
-    private final StringRedisTemplate stringRedisTemplate;
+    private final AuthLoginGuard loginGuard;
+    private final AuthSessionService sessions;
 
     @Override
     public Result login(LoginFormDTO loginForm) {
@@ -44,22 +39,28 @@ public class UserInfoServiceImpl extends ServiceImpl<UserInfoMapper, UserInfo> i
             return validation;
         }
 
-        UserInfo user = lambdaQuery()
-                .eq(UserInfo::getUserName, userName)
-                .last("limit 1")
-                .one();
-        if (user == null) {
-            return Result.fail("用户不存在，请先注册");
+        try (var permit = loginGuard.acquire()) {
+            loginGuard.checkRequestRate();
+            UserInfo user = lambdaQuery()
+                    .eq(UserInfo::getUserName, userName)
+                    .last("limit 1")
+                    .one();
+            if (user == null) {
+                return Result.fail("用户名或密码错误");
+            }
+            loginGuard.checkAccount(user.getId());
+            if (!PasswordEncoder.matches(user.getPassword(), password)) {
+                loginGuard.loginFailed(user.getId());
+                return Result.fail("用户名或密码错误");
+            }
+            if (PasswordEncoder.needsUpgrade(user.getPassword())) {
+                lambdaUpdate().eq(UserInfo::getId, user.getId())
+                        .eq(UserInfo::getPassword, user.getPassword())
+                        .set(UserInfo::getPassword, PasswordEncoder.encode(password)).update();
+            }
+            loginGuard.loginSucceeded(user.getId());
+            return Result.ok(sessions.create(toUserDTO(user)));
         }
-        if (!PasswordEncoder.matches(user.getPassword(), password)) {
-            return Result.fail("密码错误");
-        }
-        if (PasswordEncoder.needsUpgrade(user.getPassword())) {
-            lambdaUpdate().eq(UserInfo::getId, user.getId())
-                    .eq(UserInfo::getPassword, user.getPassword())
-                    .set(UserInfo::getPassword, PasswordEncoder.encode(password)).update();
-        }
-        return Result.ok(saveUserToRedis(user));
     }
 
     @Override
@@ -71,35 +72,38 @@ public class UserInfoServiceImpl extends ServiceImpl<UserInfoMapper, UserInfo> i
             return validation;
         }
 
-        Long count = lambdaQuery().eq(UserInfo::getUserName, userName).count();
-        if (count != null && count > 0) {
-            return Result.fail("用户名已存在");
-        }
+        try (var permit = loginGuard.acquire()) {
+            loginGuard.checkRequestRate();
+            Long count = lambdaQuery().eq(UserInfo::getUserName, userName).count();
+            if (count != null && count > 0) {
+                return Result.fail("用户名已存在");
+            }
 
-        UserInfo user = new UserInfo()
-                .setUserName(userName)
-                .setPassword(PasswordEncoder.encode(password))
-                .setNickName("");
-        try {
-            save(user);
-        } catch (DuplicateKeyException e) {
-            return Result.fail("用户名已存在");
-        }
+            UserInfo user = new UserInfo()
+                    .setUserName(userName)
+                    .setPassword(PasswordEncoder.encode(password))
+                    .setNickName("");
+            try {
+                save(user);
+            } catch (DuplicateKeyException e) {
+                return Result.fail("用户名已存在");
+            }
 
-        String nickName = String.valueOf(user.getId());
-        user.setNickName(nickName);
-        lambdaUpdate()
-                .eq(UserInfo::getId, user.getId())
-                .set(UserInfo::getNickName, nickName)
-                .update();
-        return Result.ok(saveUserToRedis(user));
+            String nickName = String.valueOf(user.getId());
+            user.setNickName(nickName);
+            lambdaUpdate()
+                    .eq(UserInfo::getId, user.getId())
+                    .set(UserInfo::getNickName, nickName)
+                    .update();
+            return Result.ok(sessions.create(toUserDTO(user)));
+        }
     }
 
     @Override
     public Result logout(String authorization) {
         String token = TokenUtils.normalize(authorization);
         if (StringUtils.hasText(token)) {
-            stringRedisTemplate.delete(LOGIN_USER_KEY + token);
+            sessions.logout(token);
         }
         UserHolder.removeUser();
         return Result.ok();
@@ -132,7 +136,7 @@ public class UserInfoServiceImpl extends ServiceImpl<UserInfoMapper, UserInfo> i
         updatedUser.setUserName(currentUser.getUserName());
         updatedUser.setNickName(nickName);
         UserHolder.saveUser(updatedUser);
-        refreshCurrentLoginUser(authorization, updatedUser);
+        sessions.updateNickname(TokenUtils.normalize(authorization), updatedUser);
         return Result.ok(updatedUser);
     }
 
@@ -178,36 +182,6 @@ public class UserInfoServiceImpl extends ServiceImpl<UserInfoMapper, UserInfo> i
             return "";
         }
         return form.getNickName().trim();
-    }
-
-    private void refreshCurrentLoginUser(String authorization, UserDTO userDTO) {
-        String token = TokenUtils.normalize(authorization);
-        if (!StringUtils.hasText(token)) {
-            return;
-        }
-        String key = LOGIN_USER_KEY + token;
-        if (Boolean.FALSE.equals(stringRedisTemplate.hasKey(key))) {
-            return;
-        }
-        Map<String, String> userMap = new HashMap<>();
-        userMap.put("id", String.valueOf(userDTO.getId()));
-        userMap.put("userName", userDTO.getUserName());
-        userMap.put("nickName", userDTO.getNickName());
-        stringRedisTemplate.opsForHash().putAll(key, userMap);
-        stringRedisTemplate.expire(key, LOGIN_USER_TTL, TimeUnit.MINUTES);
-    }
-
-    private String saveUserToRedis(UserInfo user) {
-        String token = UUID.randomUUID().toString().replace("-", "");
-        UserDTO userDTO = toUserDTO(user);
-        Map<String, String> userMap = new HashMap<>();
-        userMap.put("id", String.valueOf(userDTO.getId()));
-        userMap.put("userName", userDTO.getUserName());
-        userMap.put("nickName", userDTO.getNickName());
-        String key = LOGIN_USER_KEY + token;
-        stringRedisTemplate.opsForHash().putAll(key, userMap);
-        stringRedisTemplate.expire(key, LOGIN_USER_TTL, TimeUnit.MINUTES);
-        return token;
     }
 
     private UserDTO toUserDTO(UserInfo user) {

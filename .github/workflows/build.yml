@@ -25,7 +25,7 @@ jobs:
       - name: 编译与打包
         run: mvn --batch-mode --no-transfer-progress -DskipTests verify
       - name: 非计费协议回归
-        run: mvn --batch-mode --no-transfer-progress -Dtest=TrialProtocolTest test
+        run: mvn --batch-mode --no-transfer-progress -Dtest=TrialProtocolTest,AuthFlowTest,CatalogAuthorizationTest test
 
   trial-integration:
     runs-on: ubuntu-latest
@@ -33,6 +33,12 @@ jobs:
     env:
       TRIAL_TEST_MYSQL_URL: jdbc:mysql://127.0.0.1:23306/zhikexing_trial_test?allowPublicKeyRetrieval=true&useSSL=false&serverTimezone=UTC
       TRIAL_TEST_ROCKETMQ: 'true'
+      AUTH_TEST_REDIS_PORT: '26379'
+      AUTH_TEST_REDIS_DATABASE: '15'
+      CATALOG_TEST_REDIS_PORT: '26379'
+      CATALOG_TEST_REDIS_DATABASE: '15'
+      CATALOG_TEST_MYSQL_URL: jdbc:mysql://127.0.0.1:23306/zhikexing_catalog_test?allowPublicKeyRetrieval=true&useSSL=false&serverTimezone=UTC
+      CATALOG_TEST_MYSQL_PASSWORD: trial-test-only
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
       - uses: actions/setup-java@de7274f081f381c8f8158605e0321c36c376e2e6
@@ -43,10 +49,11 @@ jobs:
       - name: 启动隔离中间件并创建测试主题
         run: |
           docker compose -f deploy/trial-test/compose.yml up -d --wait
+          docker compose -f deploy/trial-test/compose.yml exec -T -e MYSQL_PWD=trial-test-only mysql mysql -uroot -e 'CREATE DATABASE IF NOT EXISTS zhikexing_catalog_test'
           docker compose -f deploy/trial-test/compose.yml exec -T broker sh mqadmin updateTopic -n nameserver:9876 -c TrialTestCluster -t zhikexing_trial_claims -r 4 -w 4 -a +message.type=TRANSACTION
           docker compose -f deploy/trial-test/compose.yml exec -T broker sh mqadmin updateTopic -n nameserver:9876 -c TrialTestCluster -t zhikexing-agent-bridge-test -r 4 -w 4 -a +message.type=NORMAL
       - name: 真实库存与消息恢复回归（无模型调用）
-        run: mvn --batch-mode --no-transfer-progress -Dtest=TrialProtocolTest,TrialIntegrationTest,RocketMqBridgeIntegrationTest test
+        run: mvn --batch-mode --no-transfer-progress -Dtest=TrialProtocolTest,TrialIntegrationTest,RocketMqBridgeIntegrationTest,AuthFlowTest,AuthLoginGuardIntegrationTest,AuthSessionIntegrationTest,CatalogAuthorizationTest,CatalogCacheIntegrationTest,CourseCatalogIntegrationTest test
       - name: 保留测试报告
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4

@@ -41,7 +41,7 @@ public class Course implements Serializable {
     private String type;
 
     /**
-     * 课程价格
+     * 课程展示价格，单位：人民币元（整数），不除以 100。
      */
     private Long price;
 

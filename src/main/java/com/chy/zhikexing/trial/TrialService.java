@@ -3,6 +3,7 @@ package com.chy.zhikexing.trial;
 import static com.chy.zhikexing.agent.AgentJson.*;
 
 import com.chy.zhikexing.agent.AgentBusinessService;
+import com.chy.zhikexing.catalog.CourseCatalogService;
 import com.chy.zhikexing.util.SnowflakeIds;
 
 import org.springframework.http.HttpStatus;
@@ -22,17 +23,20 @@ public class TrialService {
     private final AgentBusinessService business;
     private final TrialInventory inventory;
     private final SnowflakeIds ids;
+    private final CourseCatalogService catalog;
 
     public TrialService(
             JdbcTemplate jdbc,
             TransactionTemplate template,
             AgentBusinessService business,
             TrialInventory inventory,
-            SnowflakeIds ids) {
+            SnowflakeIds ids,
+            CourseCatalogService catalog) {
         this.jdbc = jdbc;
         this.business = business;
         this.inventory = inventory;
         this.ids = ids;
+        this.catalog = catalog;
         this.tx = new TransactionTemplate(template.getTransactionManager());
         tx.setIsolationLevel(
                 org.springframework.transaction.TransactionDefinition.ISOLATION_READ_COMMITTED);
@@ -53,19 +57,7 @@ public class TrialService {
     /** Existing business records offered as choices when an owner creates a trial campaign. */
     public Map<String, Object> catalog(long actor, String workspace) {
         business.requireMember(actor, workspace);
-        var courses =
-                jdbc.query(
-                        "SELECT id,name FROM course ORDER BY id LIMIT 500",
-                        (r, n) -> Map.of("id", r.getString("id"), "name", r.getString("name")));
-        var campuses =
-                jdbc.query(
-                        "SELECT id,name,city FROM school ORDER BY id LIMIT 200",
-                        (r, n) ->
-                                Map.of(
-                                        "id", r.getString("id"),
-                                        "name", r.getString("name"),
-                                        "city", Objects.toString(r.getString("city"), "")));
-        return Map.of("courses", courses, "campuses", campuses);
+        return Map.of("courses", catalog.courseOptions(), "campuses", catalog.campuses());
     }
 
     public List<Map<String, Object>> campaigns(long actor, String workspace) {

@@ -22,6 +22,8 @@ public class CatalogCache {
     private final RedissonClient redisson;
     private final CatalogCacheProperties properties;
     private final MeterRegistry metrics;
+    private final String mode;
+    private final String keyPrefix;
 
     public CatalogCache(StringRedisTemplate redis, RedissonClient redisson,
             CatalogCacheProperties properties, MeterRegistry metrics) {
@@ -29,13 +31,23 @@ public class CatalogCache {
         this.redisson = redisson;
         this.properties = properties;
         this.metrics = metrics;
+        if (properties.getKeyPrefix() == null || properties.getKeyPrefix().isBlank())
+            throw new IllegalArgumentException("Catalog cache key-prefix must be nonempty");
+        keyPrefix = properties.getKeyPrefix().endsWith(":")
+                ? properties.getKeyPrefix() : properties.getKeyPrefix() + ":";
+        mode = properties.getMode().name().toLowerCase(java.util.Locale.ROOT).replace('_', '-');
         local = Caffeine.newBuilder().maximumSize(properties.getMaxEntries())
                 .expireAfterWrite(properties.getLocalTtl()).recordStats().build();
         CaffeineCacheMetrics.monitor(metrics, local, "courseCatalog");
+        io.micrometer.core.instrument.Gauge.builder("catalog.cache.configuration", () -> 1)
+                .tag("mode", mode).tag("key_prefix", keyPrefix).register(metrics);
     }
 
     public String get(String key, Supplier<String> loader) {
+        metrics.counter("catalog.cache.calls", "mode", mode).increment();
         try {
+            if (properties.getMode() == CatalogCacheProperties.Mode.DB) return load(loader);
+            if (properties.getMode() == CatalogCacheProperties.Mode.REDIS) return loadShared(key, loader);
             // 同 JVM 同 key 的请求合并加载；跨 JVM 的回源由 RLock 协调。
             return local.get(key, k -> loadShared(k, loader));
         } catch (DataAccessException | RedisException e) {
@@ -44,12 +56,12 @@ public class CatalogCache {
     }
 
     private String loadShared(String key, Supplier<String> loader) {
-        String redisKey = "catalog:v1:" + key;
+        String redisKey = keyPrefix + "v1:" + key;
         String value = redis.opsForValue().get(redisKey);
         metrics.counter("catalog.cache.redis.requests", "result", value == null ? "miss" : "hit").increment();
         if (value != null) return value;
 
-        var lock = redisson.getLock("catalog:lock:v1:" + key);
+        var lock = redisson.getLock(keyPrefix + "lock:v1:" + key);
         try {
             if (!lock.tryLock(properties.getLockWait().toMillis(), TimeUnit.MILLISECONDS))
                 throw new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE, "课程数据正在加载，请稍后重试");
@@ -60,13 +72,17 @@ public class CatalogCache {
         try {
             value = redis.opsForValue().get(redisKey);
             if (value == null) {
-                metrics.counter("catalog.cache.loads").increment();
-                value = loader.get();
+                value = load(loader);
                 redis.opsForValue().set(redisKey, value, properties.getSharedTtl());
             }
             return value;
         } finally {
             lock.unlock();
         }
+    }
+
+    private String load(Supplier<String> loader) {
+        metrics.counter("catalog.cache.loads").increment();
+        return loader.get();
     }
 }

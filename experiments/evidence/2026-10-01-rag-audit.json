@@ -1,0 +1,158 @@
+{
+  "schemaVersion": 1,
+  "createdAtUtc": "2026-10-01T07:38:32.979177+00:00",
+  "passed": true,
+  "checksPerformed": 981,
+  "mismatches": [],
+  "auditMethod": "Read-only frozen artifacts; independent gold-set metrics and nearest-rank P95; source AST call-path review; offline cosine arithmetic validates dense ranks. No service/model/experiment execution.",
+  "sourceDirectory": "E:\\dev\\zhikexing-agent-runtime\\experiments\\results\\2026-10-01\\rag-postgres",
+  "sourceHashes": {
+    "experiments\\rag_corpus.jsonl": "a18b7b40b8d1c6219bb0acaa570be09a172753420537d09d4c1eef84c7610b4c",
+    "experiments\\rag_questions.jsonl": "3c9d6c2312ad8b2a1672ca42009b1b982f110296c93a457da1ead02d302cfc5c",
+    "experiments\\results\\2026-10-01\\rag-real-cache.json": "3ca6665a41552b42e1355ee2c59b0269ab862f18b3e936337371e29029d7fe86",
+    "experiments\\results\\2026-10-01\\rag-postgres\\cases.jsonl": "c2de56dba5bb6c68b7dcf8f1e5738c11af6aba9558f3d2d6b27ccaba8b0dff9f",
+    "experiments\\results\\2026-10-01\\rag-postgres\\summary.json": "8a08c20ba67dfb03b5170ede192f24a4b39ea4ac080be7b157f5fdbc8b784028",
+    "experiments\\rag.py": "b0f07fb52230332847ca3530149d8c84cc85a03401b7723ad1d9fd6d0dca9aa2",
+    "zhikexing_agent\\provider.py": "df5c4b946203eb183ee5c7524c3059a49a46acc3c74728af2510cd402de68330"
+  },
+  "corpusChunks": 100,
+  "questions": 50,
+  "splitCounts": {
+    "development": 20,
+    "holdout": 30
+  },
+  "rawCaseRows": 150,
+  "timingsTotal": 750,
+  "queryVariantRows": {
+    "dense": 50,
+    "lexical": 50,
+    "rrf": 50
+  },
+  "goldEvidenceCountBySplit": {
+    "development": {
+      "1": 15,
+      "2": 5
+    },
+    "holdout": {
+      "1": 22,
+      "2": 8
+    }
+  },
+  "provider": "bailian",
+  "model": "text-embedding-v4",
+  "dimensions": 1024,
+  "vectorCount": 150,
+  "vectorsWithNegativeValues": 150,
+  "embeddingUsageTokens": 5848,
+  "corpusBatches": 10,
+  "queryEmbeddingRecords": 50,
+  "externalModelCallsDuringCompare": 0,
+  "externalCallVerification": "Summary records zero; compare loads frozen vectors and calls only local ranking/PostgreSQL retrievers, confirmed by source review. No packet capture or independent vendor billing proof is present.",
+  "offlineCosineRankMatches": 50,
+  "metrics": {
+    "development": {
+      "dense": {
+        "queries": 20,
+        "macroRecallAt5": 1.0,
+        "MRRAt5": 1.0,
+        "allEvidenceAt5Rate": 1,
+        "retrievalP95Ms": 1.3701459993171738,
+        "queryEmbeddingP95Ms": 229.1784019998886,
+        "retrievalTimings": 100
+      },
+      "lexical": {
+        "queries": 20,
+        "macroRecallAt5": 1.0,
+        "MRRAt5": 1.0,
+        "allEvidenceAt5Rate": 1,
+        "retrievalP95Ms": 1.3040699996054173,
+        "queryEmbeddingP95Ms": 229.1784019998886,
+        "retrievalTimings": 100
+      },
+      "rrf": {
+        "queries": 20,
+        "macroRecallAt5": 1.0,
+        "MRRAt5": 1.0,
+        "allEvidenceAt5Rate": 1,
+        "retrievalP95Ms": 2.902690000155417,
+        "queryEmbeddingP95Ms": 229.1784019998886,
+        "retrievalTimings": 100
+      }
+    },
+    "holdout": {
+      "dense": {
+        "queries": 30,
+        "macroRecallAt5": 1.0,
+        "MRRAt5": 1.0,
+        "allEvidenceAt5Rate": 1,
+        "retrievalP95Ms": 1.7776559998310404,
+        "queryEmbeddingP95Ms": 184.56341100045393,
+        "retrievalTimings": 150
+      },
+      "lexical": {
+        "queries": 30,
+        "macroRecallAt5": 1.0,
+        "MRRAt5": 1.0,
+        "allEvidenceAt5Rate": 1,
+        "retrievalP95Ms": 1.6171529996427125,
+        "queryEmbeddingP95Ms": 184.56341100045393,
+        "retrievalTimings": 150
+      },
+      "rrf": {
+        "queries": 30,
+        "macroRecallAt5": 1.0,
+        "MRRAt5": 1.0,
+        "allEvidenceAt5Rate": 1,
+        "retrievalP95Ms": 3.5030830003961455,
+        "queryEmbeddingP95Ms": 184.56341100045393,
+        "retrievalTimings": 150
+      }
+    },
+    "all": {
+      "dense": {
+        "queries": 50,
+        "macroRecallAt5": 1.0,
+        "MRRAt5": 1.0,
+        "allEvidenceAt5Rate": 1,
+        "retrievalP95Ms": 1.6283800005112425,
+        "queryEmbeddingP95Ms": 229.1784019998886,
+        "retrievalTimings": 250
+      },
+      "lexical": {
+        "queries": 50,
+        "macroRecallAt5": 1.0,
+        "MRRAt5": 1.0,
+        "allEvidenceAt5Rate": 1,
+        "retrievalP95Ms": 1.4876530003675725,
+        "queryEmbeddingP95Ms": 229.1784019998886,
+        "retrievalTimings": 250
+      },
+      "rrf": {
+        "queries": 50,
+        "macroRecallAt5": 1.0,
+        "MRRAt5": 1.0,
+        "allEvidenceAt5Rate": 1,
+        "retrievalP95Ms": 3.1974630001059268,
+        "queryEmbeddingP95Ms": 229.1784019998886,
+        "retrievalTimings": 250
+      }
+    }
+  },
+  "holdoutFusionQualityGain": {
+    "macroRecallAt5PercentagePoints": 0,
+    "MRRAt5Gain": 0,
+    "allEvidenceAt5PercentagePoints": 0
+  },
+  "latencyScope": "PostgreSQL exact vector query / all candidate transfer + Python lexical / both for RRF; excludes embedding, generation, HTTP and authorization",
+  "limits": [
+    "100 synthetic chunks/50 templated labeled questions; holdout contains 30 questions including 8 with two gold chunks, not production user accuracy.",
+    "Dense, lexical and RRF all have holdout Recall@5=1, MRR@5=1 and all-evidence=1; benchmark saturates and does not demonstrate a fusion quality improvement.",
+    "Development/holdout course identities do not overlap, but generated question templates recur across splits; no broad semantic generalization claim.",
+    "RRF holdout retrieval P95=3.503 ms is higher than dense 1.778 ms and lexical 1.617 ms; no fusion latency improvement.",
+    "Retrieval P95 pools 150 timing observations per holdout variant (30 questions x 5); not P95 of an end-to-end production HTTP RAG API.",
+    "Embedding P95=184.563 ms on holdout is cached measurement of one individual remote preparation call per question, reused across all three variants; not three sets of fresh calls.",
+    "Real provider/cache source fingerprints plus non-fixture vectors and usage metadata support real embedding provenance; no independent signed vendor trace included.",
+    "No generated answer quality, hallucination rate, tool success or end-to-end Agent task success is measured here.",
+    "No ANN index, reranker or large-corpus scalability was tested."
+  ]
+}

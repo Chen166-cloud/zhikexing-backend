@@ -1,0 +1,60 @@
+{
+  "recordedAtLocal": "2026-10-01T14:34:10+08:00",
+  "scope": "targeted Java and Python verification plus post-preflight harness regression; does not claim a full repository suite",
+  "java": {
+    "command": "mvn -q -Dtest=CatalogCacheModeTest,CatalogAuthorizationTest,TrialProtocolTest test",
+    "exitCode": 0,
+    "suites": {
+      "CatalogCacheModeTest": {
+        "tests": 4,
+        "failures": 0,
+        "errors": 0
+      },
+      "CatalogAuthorizationTest": {
+        "tests": 3,
+        "failures": 0,
+        "errors": 0
+      },
+      "TrialProtocolTest": {
+        "tests": 1,
+        "failures": 0,
+        "errors": 0
+      }
+    }
+  },
+  "python": {
+    "cacheHarness": {
+      "tests": 5,
+      "passed": 5,
+      "runner": "backend audit agent"
+    },
+    "trialHarnessAndPreflight": {
+      "tests": 6,
+      "passed": 6
+    },
+    "evidenceStatistics": {
+      "tests": 11,
+      "passed": 11,
+      "scope": "completed-agent raw record, manifest, provider and frozen-dataset coverage checks added",
+      "runner": "evidence audit agent"
+    },
+    "agentHarness": {
+      "tests": 15,
+      "passed": 15
+    },
+    "agentMysqlResultNormalizationRegression": {
+      "tests": 1,
+      "passed": 1,
+      "command": ".venv/Scripts/python.exe -m unittest experiments.test_harness.BusinessFieldOracleTest.test_mysql_empty_tuple_and_populated_list_results -v",
+      "exitCode": 0,
+      "runner": "agent audit agent",
+      "note": "targeted regression after initial recovery harness TypeError; original failures preserved"
+    }
+  },
+  "build": {
+    "command": "mvn -q -DskipTests package",
+    "exitCode": 0
+  },
+  "cacheFormalScriptSha256": "1847cb670c92cb7747cbf12364beb9aba78018bad5b39d131ca881c5ce99dd76",
+  "note": "Load-generator saturation calibrations are preserved and excluded; this file records offline checks, not business performance results."
+}

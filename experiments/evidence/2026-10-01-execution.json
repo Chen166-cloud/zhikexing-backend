@@ -1,0 +1,102 @@
+{
+  "completedAtUtc": "2026-10-01T07:42:24.008306+00:00",
+  "requestedOrder": [
+    "cache",
+    "trial",
+    "agent-recovery",
+    "agent-evaluation"
+  ],
+  "executionStatus": "all_four_experiment_stages_executed",
+  "machine": "Intel i9-14900HX, Windows 11 / WSL Ubuntu 22.04, 31.6 GiB host RAM",
+  "scope": "isolated local services and synthetic business fixtures; no production capacity claim",
+  "backend": {
+    "jarSha256": "be2411f84770cdc051852e8625b89bec1da9355267f4d748e12f90c64a2ffd8a",
+    "cacheMeasuredRequests": 648000,
+    "cacheOfferedRps": 400,
+    "cacheColdRequests": 4000,
+    "cacheColdBursts": 20,
+    "trialStages": 30,
+    "trialHttpAttempts": 38520,
+    "trialOrders": 26700,
+    "trialOversellObserved": 0,
+    "trialDuplicateOrdersObserved": 0
+  },
+  "recovery": {
+    "provider": "fixture",
+    "cases": 80,
+    "passed": 80,
+    "processCrashCases": 60,
+    "httpReplayGroups": 20,
+    "additionalReplayRequests": 500,
+    "duplicateBusinessActionsObserved": 0,
+    "unapprovedBusinessEffectsObserved": 0
+  },
+  "agentEvaluation": {
+    "provider": "bailian",
+    "model": "qwen3.7-flash",
+    "frozenDatasetCases": 50,
+    "executedDevelopmentCases": 5,
+    "developmentRulePassed": 4,
+    "executedHoldoutCases": 30,
+    "holdoutRulePassed": 21,
+    "semanticCorrectness": null,
+    "aiAssistedAudit": "2026-10-01-agent-eval-audit.json",
+    "estimatedChatCostCny": 0.043437,
+    "fullVendorBillCny": null
+  },
+  "rag": {
+    "provider": "bailian",
+    "model": "text-embedding-v4",
+    "chunks": 100,
+    "questions": 50,
+    "holdoutQuestions": 30,
+    "timingRecords": 750,
+    "heldoutRecallAt5": {
+      "dense": 1.0,
+      "lexical": 1.0,
+      "rrf": 1.0
+    },
+    "fusionQualityImprovementDemonstrated": false,
+    "embeddingUsageTokens": 5848,
+    "embeddingCostCny": null,
+    "limitations": "small synthetic benchmark with saturated scores; no evidence of RRF improvement or production answer accuracy"
+  },
+  "cleanup": {
+    "experimentContainersStopped": true,
+    "experimentDataVolumesPreserved": true,
+    "resourceSamplersStopped": true,
+    "existingProjectFrontendBackendRuntimeHealthy": true
+  },
+  "credentialHandling": {
+    "localEnvConfigured": true,
+    "localEnvGitIgnored": true,
+    "repositoryCandidateCredentialFindings": 0,
+    "credentialValueIncludedInLedger": false
+  },
+  "artifacts": {
+    "2026-10-01-agent-eval-audit.json": {
+      "sha256": "4287abbb32e943037b421611a4fffa21a0e1d647804f449532bbc5bb0f832e89",
+      "bytes": 51533
+    },
+    "2026-10-01-backend-audit.json": {
+      "sha256": "d0c65fbaed736c89f9a40bd4e6a1da05ec5d730aaac4c5f51a822e6dd3faa0b8",
+      "bytes": 52509
+    },
+    "2026-10-01-model-cost-reference.json": {
+      "sha256": "04efb4ade2daebcf13ff69c799d9591f684439d6305b89f4f4ba821b2fa8fef7",
+      "bytes": 785
+    },
+    "2026-10-01-rag-audit.json": {
+      "sha256": "b4a1eaf05be3a882207441fc905c27fd6729a5e7c5b8074885211f579e71d363",
+      "bytes": 6429
+    },
+    "2026-10-01-summary.json": {
+      "sha256": "7e5d82a3003d7a41696e25a0f52c18c54895b8f955208ab4955e456e7f1854cc",
+      "bytes": 52957
+    },
+    "2026-10-01-validation.json": {
+      "sha256": "13fb7d97821f09ab2498450adf05cda73b2ec378db4e50c84819851c7dbc747c",
+      "bytes": 1940
+    }
+  }
+}

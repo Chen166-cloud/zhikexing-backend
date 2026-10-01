@@ -1,0 +1,17 @@
+{
+  "verifiedAtUtc": "2026-10-01T07:26:50+00:00",
+  "source": "https://help.aliyun.com/zh/model-studio/qwen3-7-flash",
+  "model": "qwen3.7-flash",
+  "region": "China Beijing",
+  "currency": "CNY",
+  "unit": "per million tokens",
+  "tiers": [
+    {"inputTokensAtMost": 32000, "input": 0.2, "output": 0.8},
+    {"inputTokensAtMost": 256000, "input": 0.6, "output": 2.4},
+    {"inputTokensAtMost": 1000000, "input": 1.2, "output": 4.8}
+  ],
+  "runtimeEstimatorMatchesPublishedBaseRates": true,
+  "chatBatchEstimatedBudgetCny": 5,
+  "actualVendorBillCny": null,
+  "scope": "Chat token estimate without cache discounts or promotions; embedding costs are separate and not accounted by the runtime estimate. The application budget is checked between cases and is not a vendor billing cap."
+}

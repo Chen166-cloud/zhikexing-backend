@@ -1,0 +1,154 @@
+name: zhikexing-benchmark
+
+x-backend: &backend
+  image: zhikexing-backend:latest
+  entrypoint: [java, -jar, /benchmark/app.jar]
+  volumes:
+    - ../target/zhikexing-backend-0.0.1-SNAPSHOT.jar:/benchmark/app.jar:ro
+  cpus: 4
+  mem_limit: 1536m
+  environment: &backend-env
+    JAVA_TOOL_OPTIONS: -Xms512m -Xmx1024m -XX:ActiveProcessorCount=4
+    DB_URL: jdbc:mysql://mysql:3306/zhikexing_benchmark?serverTimezone=UTC&useUnicode=true&characterEncoding=utf-8&allowPublicKeyRetrieval=true&useSSL=false
+    DB_USERNAME: root
+    DB_PASSWORD: benchmark-only
+    REDIS_HOST: redis
+    REDIS_PORT: 6379
+    DASHSCOPE_API_KEY: fixture-no-external-model
+    AGENT_INTERNAL_TOKEN: benchmark-internal-only
+    AGENT_RUNTIME_URL: http://agent-experiment:28400
+    ROCKETMQ_ENABLED: "true"
+    ROCKETMQ_NAME_SERVER: nameserver:9876
+    SNOWFLAKE_NODE_ID: 901
+    APP_CATALOG_CACHE_MODE: ${BENCHMARK_CACHE_MODE:-two-level}
+    APP_CATALOG_CACHE_KEY_PREFIX: "benchmark:cache:"
+    TRIAL_RECOVERY_BATCH_SIZE: ${BENCHMARK_TRIAL_BATCH_SIZE:-30}
+    TRIAL_RECOVERY_DELAY_MS: ${BENCHMARK_TRIAL_DELAY_MS:-1000}
+  depends_on:
+    mysql: {condition: service_healthy}
+    redis: {condition: service_started}
+    broker: {condition: service_started}
+  healthcheck:
+    test: [CMD, curl, -fsS, http://localhost:8081/actuator/health]
+    interval: 3s
+    timeout: 3s
+    retries: 60
+
+services:
+  load-generator:
+    image: zhikexing-agent-runtime:latest
+    profiles: [load]
+    entrypoint: []
+    command: [python, -c, "import time; time.sleep(86400)"]
+    working_dir: /workspace
+    user: "0:0"
+    cpus: 2
+    mem_limit: 768m
+    volumes: ["..:/workspace"]
+  mysql:
+    image: mysql:8.4.8
+    cpus: 2
+    mem_limit: 1024m
+    environment:
+      MYSQL_ROOT_PASSWORD: benchmark-only
+      MYSQL_ROOT_HOST: "%"
+      MYSQL_DATABASE: zhikexing_benchmark
+    ports: ["127.0.0.1:28306:3306"]
+    volumes: [benchmark-mysql:/var/lib/mysql]
+    healthcheck:
+      test: [CMD-SHELL, "MYSQL_PWD=benchmark-only mysql -uroot -e 'SELECT 1'"]
+      interval: 3s
+      timeout: 3s
+      retries: 60
+  redis:
+    image: redis:8.2.1-alpine
+    cpus: 1
+    mem_limit: 384m
+    command: [redis-server, --appendonly, "no", --maxmemory, 256mb, --maxmemory-policy, noeviction]
+    ports: ["127.0.0.1:28379:6379"]
+  postgres:
+    image: pgvector/pgvector:0.8.5-pg17
+    cpus: 2
+    mem_limit: 1024m
+    environment:
+      POSTGRES_USER: bench
+      POSTGRES_PASSWORD: benchmark-only
+      POSTGRES_DB: zhikexing_benchmark
+    ports: ["127.0.0.1:28432:5432"]
+    volumes: [benchmark-postgres:/var/lib/postgresql/data]
+    healthcheck:
+      test: [CMD-SHELL, "pg_isready -U bench -d zhikexing_benchmark"]
+      interval: 3s
+      timeout: 3s
+      retries: 60
+  nameserver:
+    image: apache/rocketmq:5.5.0
+    cpus: 1
+    mem_limit: 384m
+    environment: {JAVA_OPT_EXT: "-Xms128m -Xmx128m -Xmn64m"}
+    command: sh mqnamesrv
+  broker:
+    image: apache/rocketmq:5.5.0
+    cpus: 2
+    mem_limit: 768m
+    depends_on:
+      nameserver: {condition: service_started}
+      broker-volume-init: {condition: service_completed_successfully}
+    environment: {JAVA_OPT_EXT: "-Xms256m -Xmx256m -Xmn128m"}
+    command: sh mqbroker -c /home/rocketmq/broker.conf
+    volumes:
+      - ./broker.conf:/home/rocketmq/broker.conf:ro
+      - benchmark-mq:/home/rocketmq/store
+  broker-volume-init:
+    image: apache/rocketmq:5.5.0
+    user: "0:0"
+    entrypoint: [sh, -ec, "chown -R 3000:3000 /home/rocketmq/store"]
+    volumes: [benchmark-mq:/home/rocketmq/store]
+  backend:
+    <<: *backend
+    ports: ["127.0.0.1:28380:8080", "127.0.0.1:28381:8081"]
+  backend-second:
+    <<: *backend
+    profiles: [two-instances]
+    environment:
+      <<: *backend-env
+      SNOWFLAKE_NODE_ID: 902
+    ports: ["127.0.0.1:28382:8080", "127.0.0.1:28383:8081"]
+  agent-experiment:
+    image: zhikexing-agent-runtime:latest
+    profiles: [agent]
+    entrypoint: []
+    command: [python, -c, "import time; time.sleep(86400)"]
+    working_dir: /workspace
+    user: "0:0"
+    cpus: 2
+    mem_limit: 1536m
+    environment:
+      PYTHONPATH: /workspace
+      PYTHONUNBUFFERED: "1"
+      AGENT_EXPERIMENT_DATABASE_URL: postgresql+psycopg://bench:benchmark-only@postgres:5432/zhikexing_benchmark
+      AGENT_EXPERIMENT_JAVA_URL: http://backend:8080
+      AGENT_INTERNAL_TOKEN: benchmark-internal-only
+      AGENT_EXPERIMENT_RUNTIME_PORT: 28400
+      AGENT_EXPERIMENT_BIND_HOST: 0.0.0.0
+      AGENT_EXPERIMENT_ISOLATED: "yes"
+      AGENT_EXPERIMENT_STORAGE_ROOT: /experiment-data
+      AGENT_EXPERIMENT_MYSQL_HOST: mysql
+      AGENT_EXPERIMENT_MYSQL_PORT: 3306
+      AGENT_EXPERIMENT_MYSQL_USER: root
+      AGENT_EXPERIMENT_MYSQL_PASSWORD: benchmark-only
+      AGENT_EXPERIMENT_MYSQL_DATABASE: zhikexing_benchmark
+    ports: ["127.0.0.1:28400:28400"]
+    volumes:
+      - ../../zhikexing-agent-runtime:/workspace
+      - ../.env:/run/benchmark-secrets/backend.env:ro
+      - benchmark-agent-data:/experiment-data
+    depends_on:
+      postgres: {condition: service_healthy}
+      backend: {condition: service_healthy}
+
+volumes:
+  benchmark-mysql:
+  benchmark-postgres:
+  benchmark-mq:
+  benchmark-agent-data:

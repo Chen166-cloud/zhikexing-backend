@@ -6,6 +6,7 @@ import com.chy.zhikexing.agent.AgentBusinessService;
 import com.chy.zhikexing.catalog.CourseCatalogService;
 import com.chy.zhikexing.util.SnowflakeIds;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
@@ -24,6 +25,14 @@ public class TrialService {
     private final TrialInventory inventory;
     private final SnowflakeIds ids;
     private final CourseCatalogService catalog;
+    private int recoveryBatchSize = 30;
+
+    @Value("${app.trial.recovery-batch-size:30}")
+    void configureRecoveryBatchSize(int size) {
+        if (size < 1 || size > 10000)
+            throw new IllegalArgumentException("Trial recovery batch size must be 1..10000");
+        recoveryBatchSize = size;
+    }
 
     public TrialService(
             JdbcTemplate jdbc,
@@ -468,9 +477,10 @@ VALUES(?,?,?,?,?,?,?,?,?)
                             jdbc.queryForList(
                                     """
 SELECT id FROM trial_claim_request WHERE status IN ('PENDING','RESERVED')
-AND next_attempt_at<=CURRENT_TIMESTAMP(3) ORDER BY next_attempt_at LIMIT 30 FOR UPDATE SKIP LOCKED
+AND next_attempt_at<=CURRENT_TIMESTAMP(3) ORDER BY next_attempt_at LIMIT ? FOR UPDATE SKIP LOCKED
 """,
-                                    String.class);
+                                    String.class,
+                                    recoveryBatchSize);
                     for (String id : ids)
                         jdbc.update(
                                 "UPDATE trial_claim_request SET"

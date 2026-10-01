@@ -1,0 +1,1574 @@
+{
+  "createdAtUtc": "2026-10-01T07:35:54.873890+00:00",
+  "schemaVersion": 1,
+  "cache": {
+    "modes": {
+      "db": {
+        "source": "experiments\\results\\2026-10-01\\cache-db-linux-400-native-formal\\summary.json",
+        "protocolValid": true,
+        "offeredRps": [
+          400.0
+        ],
+        "repetitions": 3,
+        "stageSeconds": 180.0,
+        "warmupSeconds": 30.0,
+        "requestPaths": [
+          "/api/v1/courses",
+          "/api/v1/courses/220331822288990210"
+        ],
+        "tokenCount": 5000,
+        "machine": {
+          "recordedAt": "2026-10-01T05:29:18.9073748Z",
+          "cpu": [
+            {
+              "Name": "Intel(R) Core(TM) i9-14900HX",
+              "NumberOfCores": 24,
+              "NumberOfLogicalProcessors": 32
+            }
+          ],
+          "os": [
+            {
+              "Caption": "Microsoft Windows 11 家庭版 中文版",
+              "RAM_GiB": 31.6
+            }
+          ],
+          "backendLimits": {
+            "cpu": 4,
+            "heapMiB": 1024,
+            "memoryMiB": 1536
+          },
+          "mysqlLimits": {
+            "cpu": 2,
+            "memoryMiB": 1024
+          },
+          "redisLimits": {
+            "cpu": 1,
+            "memoryMiB": 384
+          },
+          "agentLimits": {
+            "cpu": 2,
+            "memoryMiB": 1536
+          },
+          "loadGenerator": "Linux container, Docker bridge network, Python 3.13.15/httpx 0.28.1",
+          "loadGeneratorProcessIsIncludedInHostResources": true,
+          "loadGeneratorLimits": {
+            "cpu": 2,
+            "memoryMiB": 768
+          },
+          "trafficPath": "load-generator -> backend:8080, same Docker bridge",
+          "calibrationComparability": "Windows host-network calibration is excluded from Linux cache mode comparisons",
+          "loadOutputFilesystem": "Container native /tmp; copied to Windows workspace only after workload completion"
+        },
+        "measurementSeconds": 540.0,
+        "measurementRequests": 216000,
+        "successes": 216000,
+        "errors": 0,
+        "dropped": 0,
+        "excludedStartupAndWarmupDropped": 0,
+        "successRps": {
+          "n": 3,
+          "median": 399.994,
+          "min": 399.989,
+          "max": 399.994
+        },
+        "httpP95Ms": {
+          "n": 3,
+          "median": 3.935,
+          "min": 3.85,
+          "max": 4.361
+        },
+        "scheduledToFinishP95Ms": {
+          "n": 3,
+          "median": 4.634,
+          "min": 4.546,
+          "max": 5.145
+        },
+        "httpP99Ms": {
+          "n": 3,
+          "median": 4.814,
+          "min": 4.758,
+          "max": 6.468
+        },
+        "schedulingLagP95Ms": {
+          "n": 3,
+          "median": 1.299,
+          "min": 1.27,
+          "max": 1.314
+        },
+        "sqlCalls": 324000.0,
+        "sqlCallsPerRequest": 1.5,
+        "sqlCallsPerSecond": 600.0,
+        "sharedCacheLookupAttempts": 0,
+        "sharedCacheLookupAttemptsPerSecond": 0.0,
+        "localCacheHits": 0.0,
+        "localCacheMisses": 0.0,
+        "catalogMetricScope": "catalog JDBC statements and shared cache first-read attempts only; excludes authentication Redis, background SQL and lock/recheck commands",
+        "windows": [
+          [
+            "2026-10-01T05:54:45.895679+00:00",
+            "2026-10-01T05:57:45.895679+00:00"
+          ],
+          [
+            "2026-10-01T05:58:16.316325+00:00",
+            "2026-10-01T06:01:16.316325+00:00"
+          ],
+          [
+            "2026-10-01T06:01:46.682377+00:00",
+            "2026-10-01T06:04:46.682377+00:00"
+          ]
+        ]
+      },
+      "redis": {
+        "source": "experiments\\results\\2026-10-01\\cache-redis-linux-400-native-formal\\summary.json",
+        "protocolValid": true,
+        "offeredRps": [
+          400.0
+        ],
+        "repetitions": 3,
+        "stageSeconds": 180.0,
+        "warmupSeconds": 30.0,
+        "requestPaths": [
+          "/api/v1/courses",
+          "/api/v1/courses/220331822288990210"
+        ],
+        "tokenCount": 5000,
+        "machine": {
+          "recordedAt": "2026-10-01T05:29:18.9073748Z",
+          "cpu": [
+            {
+              "Name": "Intel(R) Core(TM) i9-14900HX",
+              "NumberOfCores": 24,
+              "NumberOfLogicalProcessors": 32
+            }
+          ],
+          "os": [
+            {
+              "Caption": "Microsoft Windows 11 家庭版 中文版",
+              "RAM_GiB": 31.6
+            }
+          ],
+          "backendLimits": {
+            "cpu": 4,
+            "heapMiB": 1024,
+            "memoryMiB": 1536
+          },
+          "mysqlLimits": {
+            "cpu": 2,
+            "memoryMiB": 1024
+          },
+          "redisLimits": {
+            "cpu": 1,
+            "memoryMiB": 384
+          },
+          "agentLimits": {
+            "cpu": 2,
+            "memoryMiB": 1536
+          },
+          "loadGenerator": "Linux container, Docker bridge network, Python 3.13.15/httpx 0.28.1",
+          "loadGeneratorProcessIsIncludedInHostResources": true,
+          "loadGeneratorLimits": {
+            "cpu": 2,
+            "memoryMiB": 768
+          },
+          "trafficPath": "load-generator -> backend:8080, same Docker bridge",
+          "calibrationComparability": "Windows host-network calibration is excluded from Linux cache mode comparisons",
+          "loadOutputFilesystem": "Container native /tmp; copied to Windows workspace only after workload completion"
+        },
+        "measurementSeconds": 540.0,
+        "measurementRequests": 216000,
+        "successes": 216000,
+        "errors": 0,
+        "dropped": 0,
+        "excludedStartupAndWarmupDropped": 0,
+        "successRps": {
+          "n": 3,
+          "median": 399.994,
+          "min": 399.994,
+          "max": 399.994
+        },
+        "httpP95Ms": {
+          "n": 3,
+          "median": 2.786,
+          "min": 2.659,
+          "max": 2.876
+        },
+        "scheduledToFinishP95Ms": {
+          "n": 3,
+          "median": 3.637,
+          "min": 3.501,
+          "max": 3.712
+        },
+        "httpP99Ms": {
+          "n": 3,
+          "median": 3.819,
+          "min": 3.701,
+          "max": 4.003
+        },
+        "schedulingLagP95Ms": {
+          "n": 3,
+          "median": 1.11,
+          "min": 1.107,
+          "max": 1.11
+        },
+        "sqlCalls": 27.0,
+        "sqlCallsPerRequest": 0.000125,
+        "sqlCallsPerSecond": 0.05,
+        "sharedCacheLookupAttempts": 216000.0,
+        "sharedCacheLookupAttemptsPerSecond": 400.0,
+        "localCacheHits": 0.0,
+        "localCacheMisses": 0.0,
+        "catalogMetricScope": "catalog JDBC statements and shared cache first-read attempts only; excludes authentication Redis, background SQL and lock/recheck commands",
+        "windows": [
+          [
+            "2026-10-01T06:06:25.858568+00:00",
+            "2026-10-01T06:09:25.858568+00:00"
+          ],
+          [
+            "2026-10-01T06:09:56.219423+00:00",
+            "2026-10-01T06:12:56.219423+00:00"
+          ],
+          [
+            "2026-10-01T06:13:26.621513+00:00",
+            "2026-10-01T06:16:26.621513+00:00"
+          ]
+        ]
+      },
+      "two-level": {
+        "source": "experiments\\results\\2026-10-01\\cache-two-level-linux-400-native-formal\\summary.json",
+        "protocolValid": true,
+        "offeredRps": [
+          400.0
+        ],
+        "repetitions": 3,
+        "stageSeconds": 180.0,
+        "warmupSeconds": 30.0,
+        "requestPaths": [
+          "/api/v1/courses",
+          "/api/v1/courses/220331822288990210"
+        ],
+        "tokenCount": 5000,
+        "machine": {
+          "recordedAt": "2026-10-01T05:29:18.9073748Z",
+          "cpu": [
+            {
+              "Name": "Intel(R) Core(TM) i9-14900HX",
+              "NumberOfCores": 24,
+              "NumberOfLogicalProcessors": 32
+            }
+          ],
+          "os": [
+            {
+              "Caption": "Microsoft Windows 11 家庭版 中文版",
+              "RAM_GiB": 31.6
+            }
+          ],
+          "backendLimits": {
+            "cpu": 4,
+            "heapMiB": 1024,
+            "memoryMiB": 1536
+          },
+          "mysqlLimits": {
+            "cpu": 2,
+            "memoryMiB": 1024
+          },
+          "redisLimits": {
+            "cpu": 1,
+            "memoryMiB": 384
+          },
+          "agentLimits": {
+            "cpu": 2,
+            "memoryMiB": 1536
+          },
+          "loadGenerator": "Linux container, Docker bridge network, Python 3.13.15/httpx 0.28.1",
+          "loadGeneratorProcessIsIncludedInHostResources": true,
+          "loadGeneratorLimits": {
+            "cpu": 2,
+            "memoryMiB": 768
+          },
+          "trafficPath": "load-generator -> backend:8080, same Docker bridge",
+          "calibrationComparability": "Windows host-network calibration is excluded from Linux cache mode comparisons",
+          "loadOutputFilesystem": "Container native /tmp; copied to Windows workspace only after workload completion"
+        },
+        "measurementSeconds": 540.0,
+        "measurementRequests": 216000,
+        "successes": 216000,
+        "errors": 0,
+        "dropped": 0,
+        "excludedStartupAndWarmupDropped": 0,
+        "successRps": {
+          "n": 3,
+          "median": 400.0,
+          "min": 399.994,
+          "max": 400.0
+        },
+        "httpP95Ms": {
+          "n": 3,
+          "median": 2.446,
+          "min": 2.42,
+          "max": 2.492
+        },
+        "scheduledToFinishP95Ms": {
+          "n": 3,
+          "median": 3.217,
+          "min": 3.217,
+          "max": 3.26
+        },
+        "httpP99Ms": {
+          "n": 3,
+          "median": 3.377,
+          "min": 3.347,
+          "max": 3.521
+        },
+        "schedulingLagP95Ms": {
+          "n": 3,
+          "median": 1.104,
+          "min": 1.102,
+          "max": 1.113
+        },
+        "sqlCalls": 27.0,
+        "sqlCallsPerRequest": 0.000125,
+        "sqlCallsPerSecond": 0.05,
+        "sharedCacheLookupAttempts": 108.0,
+        "sharedCacheLookupAttemptsPerSecond": 0.2,
+        "localCacheHits": 215892.0,
+        "localCacheMisses": 108.0,
+        "catalogMetricScope": "catalog JDBC statements and shared cache first-read attempts only; excludes authentication Redis, background SQL and lock/recheck commands",
+        "windows": [
+          [
+            "2026-10-01T06:18:01.097922+00:00",
+            "2026-10-01T06:21:01.097922+00:00"
+          ],
+          [
+            "2026-10-01T06:21:31.471605+00:00",
+            "2026-10-01T06:24:31.471605+00:00"
+          ],
+          [
+            "2026-10-01T06:25:01.845386+00:00",
+            "2026-10-01T06:28:01.845386+00:00"
+          ]
+        ]
+      }
+    },
+    "identicalProtocol": true,
+    "statistic": "median and min/max of per-run percentiles; SQL counts summed across measurement windows",
+    "capacityClaim": "sustained tested workload only, not maximum server capacity",
+    "twoLevelVersusDb": {
+      "usable": true,
+      "httpP95ReductionPercent": 37.839898348157554,
+      "sqlPerRequestReductionPercent": 99.99166666666667
+    },
+    "twoLevelVersusRedis": {
+      "httpP95ReductionPercent": 12.203876525484558,
+      "catalogSharedLookupReductionPercent": 99.95
+    }
+  },
+  "cacheCold": {
+    "source": "experiments\\results\\2026-10-01\\cache-cold-linux-two-instances\\summary.json",
+    "status": "completed",
+    "instances": 2,
+    "attemptedBursts": 20,
+    "concurrencies": [
+      100,
+      300
+    ],
+    "roundsPerConcurrency": 10,
+    "protocolComplete": true,
+    "passedBursts": 20,
+    "requests": 4000,
+    "loaderCalls": 20.0,
+    "sqlCalls": 20.0,
+    "meaning": "one shared cold key, each burst after local TTL expiration; not general hotspot capacity"
+  },
+  "trial": {
+    "runs": [
+      {
+        "source": "experiments\\results\\2026-10-01\\trial-baseline",
+        "configuration": {
+          "python": "3.13.9",
+          "platform": "Windows-11-10.0.26200-SP0",
+          "trialRecoveryDelayMs": 1000,
+          "trialRecoveryBatchSize": 30,
+          "repetitions": 3,
+          "durationSeconds": 30,
+          "includeBurst": true,
+          "rates": "5,20,40,80",
+          "configChangesFromDefault": false,
+          "containerTrialEnvironment": {
+            "batchSize": "30",
+            "delayMs": "1000"
+          },
+          "packagedPropertyBindings": {
+            "yamlBatchEnvironmentBinding": true,
+            "yamlDelayEnvironmentBinding": true,
+            "serviceBatchProperty": true,
+            "scheduledDelayProperty": true
+          },
+          "configurationEvidence": "running container environment plus packaged JAR bindings; health is readiness only",
+          "singleBackendInstanceChecked": true,
+          "burstSemantics": "1,000 new users at 100/s plus 20% replays, 100 seats; not instantaneous concurrency",
+          "jarSha256": "be2411f84770cdc051852e8625b89bec1da9355267f4d748e12f90c64a2ffd8a",
+          "trialLoadSha256": "4d9b1c684eab07df66bf1e8b806962155a35006eab7abd6e15198706fb023eee"
+        },
+        "groups": {
+          "burst": {
+            "repetitions": 3,
+            "users": 3000,
+            "usersPerRun": {
+              "n": 3,
+              "median": 1000,
+              "min": 1000,
+              "max": 1000
+            },
+            "countScope": "users/httpAttempts/confirmedOrders are totals across repetitions",
+            "expectedRepetitions": 3,
+            "repetitionsComplete": true,
+            "httpAttempts": 3600,
+            "confirmedOrders": 300,
+            "allChecksPassed": true,
+            "acceptanceP95Ms": {
+              "n": 3,
+              "median": 54.635,
+              "min": 54.125,
+              "max": 59.166
+            },
+            "orderPersistenceP95Ms": {
+              "n": 3,
+              "median": 3240.0,
+              "min": 2985.0,
+              "max": 4029.0
+            },
+            "steadyOrderTps": null,
+            "tpsIncludingDrain": {
+              "n": 3,
+              "median": 20.226537193418856,
+              "min": 19.829466654847383,
+              "max": 23.496240369844575
+            },
+            "backlogDrainSeconds": {
+              "n": 3,
+              "median": 30.831000089645386,
+              "min": 30.009000062942505,
+              "max": 32.24300003051758
+            },
+            "violations": {
+              "duplicateClaimRows": 0,
+              "duplicateClaimsPerActor": 0,
+              "duplicateIdempotencyKeys": 0,
+              "duplicateOrdersPerActor": 0,
+              "duplicateOrderIds": 0,
+              "succeededWithoutOrder": 0,
+              "orderWithoutSucceededMatchingClaim": 0,
+              "nonzeroAmount": 0,
+              "inFlight": 0,
+              "compensationPending": 0,
+              "negativeDurations": 0
+            }
+          },
+          "rate-20": {
+            "repetitions": 3,
+            "users": 1800,
+            "usersPerRun": {
+              "n": 3,
+              "median": 600,
+              "min": 600,
+              "max": 600
+            },
+            "countScope": "users/httpAttempts/confirmedOrders are totals across repetitions",
+            "expectedRepetitions": 3,
+            "repetitionsComplete": true,
+            "httpAttempts": 2160,
+            "confirmedOrders": 1800,
+            "allChecksPassed": true,
+            "acceptanceP95Ms": {
+              "n": 3,
+              "median": 54.783,
+              "min": 53.784,
+              "max": 60.828
+            },
+            "orderPersistenceP95Ms": {
+              "n": 3,
+              "median": 1138.0,
+              "min": 1133.0,
+              "max": 1437.0
+            },
+            "steadyOrderTps": {
+              "n": 3,
+              "median": 19.8,
+              "min": 19.8,
+              "max": 20.3
+            },
+            "tpsIncludingDrain": {
+              "n": 3,
+              "median": 19.300672225042472,
+              "min": 19.252366312988855,
+              "max": 19.798713040036077
+            },
+            "backlogDrainSeconds": {
+              "n": 3,
+              "median": 1.0989999771118164,
+              "min": 0.33500003814697266,
+              "max": 1.1740000247955322
+            },
+            "violations": {
+              "duplicateClaimRows": 0,
+              "duplicateClaimsPerActor": 0,
+              "duplicateIdempotencyKeys": 0,
+              "duplicateOrdersPerActor": 0,
+              "duplicateOrderIds": 0,
+              "succeededWithoutOrder": 0,
+              "orderWithoutSucceededMatchingClaim": 0,
+              "nonzeroAmount": 0,
+              "inFlight": 0,
+              "compensationPending": 0,
+              "negativeDurations": 0
+            }
+          },
+          "rate-40": {
+            "repetitions": 3,
+            "users": 3600,
+            "usersPerRun": {
+              "n": 3,
+              "median": 1200,
+              "min": 1200,
+              "max": 1200
+            },
+            "countScope": "users/httpAttempts/confirmedOrders are totals across repetitions",
+            "expectedRepetitions": 3,
+            "repetitionsComplete": true,
+            "httpAttempts": 4320,
+            "confirmedOrders": 3600,
+            "allChecksPassed": true,
+            "acceptanceP95Ms": {
+              "n": 3,
+              "median": 54.594,
+              "min": 54.534,
+              "max": 54.934
+            },
+            "orderPersistenceP95Ms": {
+              "n": 3,
+              "median": 18444.0,
+              "min": 18202.0,
+              "max": 19046.0
+            },
+            "steadyOrderTps": {
+              "n": 3,
+              "median": 24.0,
+              "min": 24.0,
+              "max": 24.75
+            },
+            "tpsIncludingDrain": {
+              "n": 3,
+              "median": 24.506800597083558,
+              "min": 24.190134518216688,
+              "max": 24.69237414657967
+            },
+            "backlogDrainSeconds": {
+              "n": 3,
+              "median": 18.949000120162964,
+              "min": 18.590999841690063,
+              "max": 19.592999935150146
+            },
+            "violations": {
+              "duplicateClaimRows": 0,
+              "duplicateClaimsPerActor": 0,
+              "duplicateIdempotencyKeys": 0,
+              "duplicateOrdersPerActor": 0,
+              "duplicateOrderIds": 0,
+              "succeededWithoutOrder": 0,
+              "orderWithoutSucceededMatchingClaim": 0,
+              "nonzeroAmount": 0,
+              "inFlight": 0,
+              "compensationPending": 0,
+              "negativeDurations": 0
+            }
+          },
+          "rate-5": {
+            "repetitions": 3,
+            "users": 450,
+            "usersPerRun": {
+              "n": 3,
+              "median": 150,
+              "min": 150,
+              "max": 150
+            },
+            "countScope": "users/httpAttempts/confirmedOrders are totals across repetitions",
+            "expectedRepetitions": 3,
+            "repetitionsComplete": true,
+            "httpAttempts": 540,
+            "confirmedOrders": 450,
+            "allChecksPassed": true,
+            "acceptanceP95Ms": {
+              "n": 3,
+              "median": 81.019,
+              "min": 73.904,
+              "max": 89.312
+            },
+            "orderPersistenceP95Ms": {
+              "n": 3,
+              "median": 1032.0,
+              "min": 1016.0,
+              "max": 1032.0
+            },
+            "steadyOrderTps": {
+              "n": 3,
+              "median": 5.1,
+              "min": 4.95,
+              "max": 5.25
+            },
+            "tpsIncludingDrain": {
+              "n": 3,
+              "median": 4.977270451016718,
+              "min": 4.870920591926555,
+              "max": 5.002834933115927
+            },
+            "backlogDrainSeconds": {
+              "n": 3,
+              "median": 0.3020000457763672,
+              "min": 0.14299988746643066,
+              "max": 0.9609999656677246
+            },
+            "violations": {
+              "duplicateClaimRows": 0,
+              "duplicateClaimsPerActor": 0,
+              "duplicateIdempotencyKeys": 0,
+              "duplicateOrdersPerActor": 0,
+              "duplicateOrderIds": 0,
+              "succeededWithoutOrder": 0,
+              "orderWithoutSucceededMatchingClaim": 0,
+              "nonzeroAmount": 0,
+              "inFlight": 0,
+              "compensationPending": 0,
+              "negativeDurations": 0
+            }
+          },
+          "rate-80": {
+            "repetitions": 3,
+            "users": 7200,
+            "usersPerRun": {
+              "n": 3,
+              "median": 2400,
+              "min": 2400,
+              "max": 2400
+            },
+            "countScope": "users/httpAttempts/confirmedOrders are totals across repetitions",
+            "expectedRepetitions": 3,
+            "repetitionsComplete": true,
+            "httpAttempts": 8640,
+            "confirmedOrders": 7200,
+            "allChecksPassed": true,
+            "acceptanceP95Ms": {
+              "n": 3,
+              "median": 54.156,
+              "min": 54.104,
+              "max": 54.387
+            },
+            "orderPersistenceP95Ms": {
+              "n": 3,
+              "median": 63117.0,
+              "min": 62845.0,
+              "max": 63640.0
+            },
+            "steadyOrderTps": {
+              "n": 3,
+              "median": 25.5,
+              "min": 25.0,
+              "max": 25.5
+            },
+            "tpsIncludingDrain": {
+              "n": 3,
+              "median": 24.913839633479277,
+              "min": 24.71933259987308,
+              "max": 24.99114892687645
+            },
+            "backlogDrainSeconds": {
+              "n": 3,
+              "median": 66.30599999427795,
+              "min": 66.00300002098083,
+              "max": 67.06200003623962
+            },
+            "violations": {
+              "duplicateClaimRows": 0,
+              "duplicateClaimsPerActor": 0,
+              "duplicateIdempotencyKeys": 0,
+              "duplicateOrdersPerActor": 0,
+              "duplicateOrderIds": 0,
+              "succeededWithoutOrder": 0,
+              "orderWithoutSucceededMatchingClaim": 0,
+              "nonzeroAmount": 0,
+              "inFlight": 0,
+              "compensationPending": 0,
+              "negativeDurations": 0
+            }
+          }
+        },
+        "protocolComplete": true,
+        "missingStages": [],
+        "unexpectedStages": []
+      },
+      {
+        "source": "experiments\\results\\2026-10-01\\trial-optimized",
+        "configuration": {
+          "python": "3.13.9",
+          "platform": "Windows-11-10.0.26200-SP0",
+          "trialRecoveryDelayMs": 100,
+          "trialRecoveryBatchSize": 30,
+          "repetitions": 3,
+          "durationSeconds": 30,
+          "includeBurst": true,
+          "rates": "5,20,40,80",
+          "configChangesFromDefault": true,
+          "containerTrialEnvironment": {
+            "batchSize": "30",
+            "delayMs": "100"
+          },
+          "packagedPropertyBindings": {
+            "yamlBatchEnvironmentBinding": true,
+            "yamlDelayEnvironmentBinding": true,
+            "serviceBatchProperty": true,
+            "scheduledDelayProperty": true
+          },
+          "configurationEvidence": "running container environment plus packaged JAR bindings; health is readiness only",
+          "singleBackendInstanceChecked": true,
+          "burstSemantics": "1,000 new users at 100/s plus 20% replays, 100 seats; not instantaneous concurrency",
+          "jarSha256": "be2411f84770cdc051852e8625b89bec1da9355267f4d748e12f90c64a2ffd8a",
+          "trialLoadSha256": "4d9b1c684eab07df66bf1e8b806962155a35006eab7abd6e15198706fb023eee"
+        },
+        "groups": {
+          "burst": {
+            "repetitions": 3,
+            "users": 3000,
+            "usersPerRun": {
+              "n": 3,
+              "median": 1000,
+              "min": 1000,
+              "max": 1000
+            },
+            "countScope": "users/httpAttempts/confirmedOrders are totals across repetitions",
+            "expectedRepetitions": 3,
+            "repetitionsComplete": true,
+            "httpAttempts": 3600,
+            "confirmedOrders": 300,
+            "allChecksPassed": true,
+            "acceptanceP95Ms": {
+              "n": 3,
+              "median": 55.032,
+              "min": 54.681,
+              "max": 59.424
+            },
+            "orderPersistenceP95Ms": {
+              "n": 3,
+              "median": 439.0,
+              "min": 316.0,
+              "max": 836.0
+            },
+            "steadyOrderTps": null,
+            "tpsIncludingDrain": {
+              "n": 3,
+              "median": 69.06077566391673,
+              "min": 54.0832889334063,
+              "max": 78.12500174622987
+            },
+            "backlogDrainSeconds": {
+              "n": 3,
+              "median": 0.5969998836517334,
+              "min": 0.3429999351501465,
+              "max": 2.1110000610351562
+            },
+            "violations": {
+              "duplicateClaimRows": 0,
+              "duplicateClaimsPerActor": 0,
+              "duplicateIdempotencyKeys": 0,
+              "duplicateOrdersPerActor": 0,
+              "duplicateOrderIds": 0,
+              "succeededWithoutOrder": 0,
+              "orderWithoutSucceededMatchingClaim": 0,
+              "nonzeroAmount": 0,
+              "inFlight": 0,
+              "compensationPending": 0,
+              "negativeDurations": 0
+            }
+          },
+          "rate-20": {
+            "repetitions": 3,
+            "users": 1800,
+            "usersPerRun": {
+              "n": 3,
+              "median": 600,
+              "min": 600,
+              "max": 600
+            },
+            "countScope": "users/httpAttempts/confirmedOrders are totals across repetitions",
+            "expectedRepetitions": 3,
+            "repetitionsComplete": true,
+            "httpAttempts": 2160,
+            "confirmedOrders": 1800,
+            "allChecksPassed": true,
+            "acceptanceP95Ms": {
+              "n": 3,
+              "median": 55.372,
+              "min": 54.64,
+              "max": 62.36
+            },
+            "orderPersistenceP95Ms": {
+              "n": 3,
+              "median": 129.0,
+              "min": 128.0,
+              "max": 174.0
+            },
+            "steadyOrderTps": {
+              "n": 3,
+              "median": 20.05,
+              "min": 20.0,
+              "max": 20.1
+            },
+            "tpsIncludingDrain": {
+              "n": 3,
+              "median": 19.960743860255604,
+              "min": 19.93686657018115,
+              "max": 19.96938028102985
+            },
+            "backlogDrainSeconds": {
+              "n": 3,
+              "median": 0.0710000991821289,
+              "min": 0.056999921798706055,
+              "max": 0.10599994659423828
+            },
+            "violations": {
+              "duplicateClaimRows": 0,
+              "duplicateClaimsPerActor": 0,
+              "duplicateIdempotencyKeys": 0,
+              "duplicateOrdersPerActor": 0,
+              "duplicateOrderIds": 0,
+              "succeededWithoutOrder": 0,
+              "orderWithoutSucceededMatchingClaim": 0,
+              "nonzeroAmount": 0,
+              "inFlight": 0,
+              "compensationPending": 0,
+              "negativeDurations": 0
+            }
+          },
+          "rate-40": {
+            "repetitions": 3,
+            "users": 3600,
+            "usersPerRun": {
+              "n": 3,
+              "median": 1200,
+              "min": 1200,
+              "max": 1200
+            },
+            "countScope": "users/httpAttempts/confirmedOrders are totals across repetitions",
+            "expectedRepetitions": 3,
+            "repetitionsComplete": true,
+            "httpAttempts": 4320,
+            "confirmedOrders": 3600,
+            "allChecksPassed": true,
+            "acceptanceP95Ms": {
+              "n": 3,
+              "median": 54.616,
+              "min": 54.203,
+              "max": 64.944
+            },
+            "orderPersistenceP95Ms": {
+              "n": 3,
+              "median": 148.0,
+              "min": 145.0,
+              "max": 379.0
+            },
+            "steadyOrderTps": {
+              "n": 3,
+              "median": 40.1,
+              "min": 40.1,
+              "max": 40.15
+            },
+            "tpsIncludingDrain": {
+              "n": 3,
+              "median": 39.85651648743106,
+              "min": 39.6904148074009,
+              "max": 39.86048826572734
+            },
+            "backlogDrainSeconds": {
+              "n": 3,
+              "median": 0.09299993515014648,
+              "min": 0.09200000762939453,
+              "max": 0.23199987411499023
+            },
+            "violations": {
+              "duplicateClaimRows": 0,
+              "duplicateClaimsPerActor": 0,
+              "duplicateIdempotencyKeys": 0,
+              "duplicateOrdersPerActor": 0,
+              "duplicateOrderIds": 0,
+              "succeededWithoutOrder": 0,
+              "orderWithoutSucceededMatchingClaim": 0,
+              "nonzeroAmount": 0,
+              "inFlight": 0,
+              "compensationPending": 0,
+              "negativeDurations": 0
+            }
+          },
+          "rate-5": {
+            "repetitions": 3,
+            "users": 450,
+            "usersPerRun": {
+              "n": 3,
+              "median": 150,
+              "min": 150,
+              "max": 150
+            },
+            "countScope": "users/httpAttempts/confirmedOrders are totals across repetitions",
+            "expectedRepetitions": 3,
+            "repetitionsComplete": true,
+            "httpAttempts": 540,
+            "confirmedOrders": 450,
+            "allChecksPassed": true,
+            "acceptanceP95Ms": {
+              "n": 3,
+              "median": 68.399,
+              "min": 64.146,
+              "max": 68.468
+            },
+            "orderPersistenceP95Ms": {
+              "n": 3,
+              "median": 122.0,
+              "min": 116.0,
+              "max": 129.0
+            },
+            "steadyOrderTps": {
+              "n": 3,
+              "median": 5.0,
+              "min": 5.0,
+              "max": 5.0
+            },
+            "tpsIncludingDrain": {
+              "n": 3,
+              "median": 5.010689492580337,
+              "min": 5.0033355538548685,
+              "max": 5.022265399274248
+            },
+            "backlogDrainSeconds": {
+              "n": 3,
+              "median": 0.10199999809265137,
+              "min": 0.031000137329101562,
+              "max": 0.13899993896484375
+            },
+            "violations": {
+              "duplicateClaimRows": 0,
+              "duplicateClaimsPerActor": 0,
+              "duplicateIdempotencyKeys": 0,
+              "duplicateOrdersPerActor": 0,
+              "duplicateOrderIds": 0,
+              "succeededWithoutOrder": 0,
+              "orderWithoutSucceededMatchingClaim": 0,
+              "nonzeroAmount": 0,
+              "inFlight": 0,
+              "compensationPending": 0,
+              "negativeDurations": 0
+            }
+          },
+          "rate-80": {
+            "repetitions": 3,
+            "users": 7200,
+            "usersPerRun": {
+              "n": 3,
+              "median": 2400,
+              "min": 2400,
+              "max": 2400
+            },
+            "countScope": "users/httpAttempts/confirmedOrders are totals across repetitions",
+            "expectedRepetitions": 3,
+            "repetitionsComplete": true,
+            "httpAttempts": 8640,
+            "confirmedOrders": 7200,
+            "allChecksPassed": true,
+            "acceptanceP95Ms": {
+              "n": 3,
+              "median": 54.697,
+              "min": 54.68,
+              "max": 54.921
+            },
+            "orderPersistenceP95Ms": {
+              "n": 3,
+              "median": 230.0,
+              "min": 226.0,
+              "max": 231.0
+            },
+            "steadyOrderTps": {
+              "n": 3,
+              "median": 79.95,
+              "min": 79.7,
+              "max": 80.15
+            },
+            "tpsIncludingDrain": {
+              "n": 3,
+              "median": 79.41234829945437,
+              "min": 79.3519593017395,
+              "max": 79.42548894311254
+            },
+            "backlogDrainSeconds": {
+              "n": 3,
+              "median": 0.192000150680542,
+              "min": 0.19000005722045898,
+              "max": 0.21700000762939453
+            },
+            "violations": {
+              "duplicateClaimRows": 0,
+              "duplicateClaimsPerActor": 0,
+              "duplicateIdempotencyKeys": 0,
+              "duplicateOrdersPerActor": 0,
+              "duplicateOrderIds": 0,
+              "succeededWithoutOrder": 0,
+              "orderWithoutSucceededMatchingClaim": 0,
+              "nonzeroAmount": 0,
+              "inFlight": 0,
+              "compensationPending": 0,
+              "negativeDurations": 0
+            }
+          }
+        },
+        "protocolComplete": true,
+        "missingStages": [],
+        "unexpectedStages": []
+      }
+    ],
+    "latencyScope": "202 acceptance and MySQL order.created_at minus claim.created_at are separate; order timestamp is inside transaction, not commit acknowledgement"
+  },
+  "recovery": {
+    "source": "E:\\dev\\zhikexing-agent-runtime\\experiments\\results\\2026-10-01\\recovery-main",
+    "kind": "fixture-engineering-recovery",
+    "modelQualityScore": null,
+    "recoveryClock": "runtime health ready to expected terminal; excludes process startup; duplicate_commands measures approval-to-completion",
+    "groups": {
+      "persisted_queue_kill": {
+        "attempted": 20,
+        "passed": 20,
+        "passRate": 1.0,
+        "injected": 20,
+        "successfulRecoveryP95Ms": 166.626,
+        "successfulStartupP95Ms": 2548.442287999933,
+        "databaseOracleCases": 20,
+        "duplicateActionRows": 0,
+        "unapprovedSideEffects": 0,
+        "successfulStartupPlusRecoveryP95Ms": 2710.070287999933,
+        "successfulCombinedClockCases": 20
+      },
+      "approval_wait_restart": {
+        "attempted": 20,
+        "passed": 20,
+        "passRate": 1.0,
+        "injected": 20,
+        "successfulRecoveryP95Ms": 335.597,
+        "successfulStartupP95Ms": 3214.5328479991804,
+        "databaseOracleCases": 20,
+        "duplicateActionRows": 0,
+        "unapprovedSideEffects": 0,
+        "successfulStartupPlusRecoveryP95Ms": 3383.1405450002553,
+        "successfulCombinedClockCases": 20
+      },
+      "committed_response_lost": {
+        "attempted": 20,
+        "passed": 20,
+        "passRate": 1.0,
+        "injected": 20,
+        "successfulRecoveryP95Ms": 322.921,
+        "successfulStartupP95Ms": 3380.2472869992926,
+        "databaseOracleCases": 20,
+        "duplicateActionRows": 0,
+        "unapprovedSideEffects": 0,
+        "successfulStartupPlusRecoveryP95Ms": 3552.5362869992923,
+        "successfulCombinedClockCases": 20
+      },
+      "duplicate_commands": {
+        "attempted": 20,
+        "passed": 20,
+        "passRate": 1.0,
+        "injected": 20,
+        "successfulRecoveryP95Ms": 933.929,
+        "successfulStartupP95Ms": null,
+        "databaseOracleCases": 20,
+        "duplicateActionRows": 0,
+        "unapprovedSideEffects": 0
+      }
+    },
+    "attemptedCases": 80,
+    "passedCases": 80,
+    "protocolComplete": true,
+    "expectedCases": 80,
+    "combinedClock": "per successful restart case: post-Popen-to-health startupMs + health-ready-to-terminal recoveryMs, then nearest-rank P95; not sum of two P95 values; HTTP replay excluded",
+    "clockLimitations": "Combined clock excludes kill time, prelaunch work, Popen creation and approval decision while down; not full fault-to-recovery RTO. HTTP replay recoveryMs is approval-to-completion. Failed cases remain in pass rate but are excluded from successful latency percentiles."
+  },
+  "agentEvaluation": [
+    {
+      "source": "E:\\dev\\zhikexing-agent-runtime\\experiments\\results\\2026-10-01\\eval-development",
+      "provider": "bailian",
+      "attempted": 5,
+      "graderVersion": "agent-contract-v2-business-fields",
+      "engineeringContractPassed": 4,
+      "scoredRealModelTasks": 5,
+      "ruleTaskPassRate": 0.8,
+      "semanticCorrectness": null,
+      "categories": {
+        "course_query": 1,
+        "missing_information": 1,
+        "reservation_approve": 1,
+        "reservation_reject": 1,
+        "trial_approve": 1
+      },
+      "latencyP95Ms": 6805.56,
+      "knownChatCostCny": 0.007861400000000001,
+      "unknownChatCostCases": 0,
+      "fullCostCny": null,
+      "totalToolCalls": 8,
+      "note": "Fixture has no model-quality score. Rule success does not grade unrestricted answer semantics. Latency excludes corpus preparation and includes automatic approval roundtrip.",
+      "selectedCases": 5,
+      "notExecutedCaseIds": [],
+      "budgetStoppedReason": null,
+      "chatBudgetCny": 0.5,
+      "protocolComplete": true,
+      "rawValidation": {
+        "verified": true,
+        "summaryFinalized": true,
+        "rawCaseFilePresent": true,
+        "datasetSha256": "3d7bc5e68c33a937314ac15b146ee9a096c50582f19f1d1c692d0518946830b3",
+        "executedCaseIds": [
+          "course_query-01",
+          "missing_information-01",
+          "reservation_approve-01",
+          "reservation_reject-01",
+          "trial_approve-01"
+        ],
+        "uniqueExecutedCases": 5,
+        "failedCases": 1,
+        "recordedErrorCases": 0,
+        "failuresWithoutRowGrader": 0
+      },
+      "evidenceScope": "real-model rule contracts; unrestricted answer semantics require separate review"
+    },
+    {
+      "source": "E:\\dev\\zhikexing-agent-runtime\\experiments\\results\\2026-10-01\\eval-holdout",
+      "provider": "bailian",
+      "attempted": 30,
+      "graderVersion": "agent-contract-v2-business-fields",
+      "engineeringContractPassed": 21,
+      "scoredRealModelTasks": 30,
+      "ruleTaskPassRate": 0.7,
+      "semanticCorrectness": null,
+      "categories": {
+        "course_query": 6,
+        "campus_query": 3,
+        "missing_information": 5,
+        "reservation_approve": 4,
+        "reservation_reject": 3,
+        "trial_query": 2,
+        "trial_approve": 2,
+        "trial_reject": 2,
+        "trial_future": 1,
+        "rag": 2
+      },
+      "latencyP95Ms": 16483.456,
+      "knownChatCostCny": 0.0355756,
+      "unknownChatCostCases": 0,
+      "fullCostCny": null,
+      "totalToolCalls": 43,
+      "note": "Fixture has no model-quality score. Rule success does not grade unrestricted answer semantics. Latency excludes corpus preparation and includes automatic approval roundtrip.",
+      "selectedCases": 30,
+      "notExecutedCaseIds": [],
+      "budgetStoppedReason": null,
+      "chatBudgetCny": 4.5,
+      "protocolComplete": true,
+      "rawValidation": {
+        "verified": true,
+        "summaryFinalized": true,
+        "rawCaseFilePresent": true,
+        "datasetSha256": "3d7bc5e68c33a937314ac15b146ee9a096c50582f19f1d1c692d0518946830b3",
+        "executedCaseIds": [
+          "course_query-02",
+          "course_query-03",
+          "course_query-05",
+          "course_query-06",
+          "course_query-08",
+          "course_query-09",
+          "campus_query-02",
+          "campus_query-03",
+          "campus_query-05",
+          "missing_information-02",
+          "missing_information-03",
+          "missing_information-05",
+          "missing_information-06",
+          "missing_information-08",
+          "reservation_approve-02",
+          "reservation_approve-03",
+          "reservation_approve-05",
+          "reservation_approve-06",
+          "reservation_reject-02",
+          "reservation_reject-03",
+          "reservation_reject-05",
+          "trial_query-02",
+          "trial_query-03",
+          "trial_approve-02",
+          "trial_approve-03",
+          "trial_reject-02",
+          "trial_reject-03",
+          "trial_future-02",
+          "rag-02",
+          "rag-03"
+        ],
+        "uniqueExecutedCases": 30,
+        "failedCases": 9,
+        "recordedErrorCases": 0,
+        "failuresWithoutRowGrader": 0
+      },
+      "evidenceScope": "real-model rule contracts; unrestricted answer semantics require separate review"
+    }
+  ],
+  "agentCoverage": {
+    "dataset": "E:\\dev\\zhikexing-agent-runtime\\experiments\\agent_cases.jsonl",
+    "datasetSha256": "3d7bc5e68c33a937314ac15b146ee9a096c50582f19f1d1c692d0518946830b3",
+    "totalCases": 50,
+    "fixtureEligible": 22,
+    "fixtureEligibleIDs": [
+      "reservation_approve-01",
+      "reservation_approve-02",
+      "reservation_approve-03",
+      "reservation_approve-04",
+      "reservation_approve-05",
+      "reservation_approve-06",
+      "reservation_reject-01",
+      "reservation_reject-02",
+      "reservation_reject-03",
+      "reservation_reject-04",
+      "reservation_reject-05",
+      "trial_query-01",
+      "trial_query-04",
+      "trial_approve-01",
+      "trial_approve-02",
+      "trial_approve-03",
+      "trial_approve-04",
+      "trial_reject-01",
+      "trial_reject-02",
+      "trial_reject-03",
+      "trial_future-01",
+      "trial_future-02"
+    ],
+    "fixtureExecutedIDs": [],
+    "fixtureExcludedIDs": [
+      "course_query-01",
+      "course_query-02",
+      "course_query-03",
+      "course_query-04",
+      "course_query-05",
+      "course_query-06",
+      "course_query-07",
+      "course_query-08",
+      "course_query-09",
+      "course_query-10",
+      "campus_query-01",
+      "campus_query-02",
+      "campus_query-03",
+      "campus_query-04",
+      "campus_query-05",
+      "missing_information-01",
+      "missing_information-02",
+      "missing_information-03",
+      "missing_information-04",
+      "missing_information-05",
+      "missing_information-06",
+      "missing_information-07",
+      "missing_information-08",
+      "trial_query-02",
+      "trial_query-03",
+      "rag-01",
+      "rag-02",
+      "rag-03"
+    ],
+    "fixtureEligibleNotExecutedIDs": [
+      "reservation_approve-01",
+      "reservation_approve-02",
+      "reservation_approve-03",
+      "reservation_approve-04",
+      "reservation_approve-05",
+      "reservation_approve-06",
+      "reservation_reject-01",
+      "reservation_reject-02",
+      "reservation_reject-03",
+      "reservation_reject-04",
+      "reservation_reject-05",
+      "trial_query-01",
+      "trial_query-04",
+      "trial_approve-01",
+      "trial_approve-02",
+      "trial_approve-03",
+      "trial_approve-04",
+      "trial_reject-01",
+      "trial_reject-02",
+      "trial_reject-03",
+      "trial_future-01",
+      "trial_future-02"
+    ],
+    "fixtureExecutedOutsideEligibleIDs": [],
+    "realExecutedIDs": [
+      "course_query-01",
+      "course_query-02",
+      "course_query-03",
+      "course_query-05",
+      "course_query-06",
+      "course_query-08",
+      "course_query-09",
+      "campus_query-02",
+      "campus_query-03",
+      "campus_query-05",
+      "missing_information-01",
+      "missing_information-02",
+      "missing_information-03",
+      "missing_information-05",
+      "missing_information-06",
+      "missing_information-08",
+      "reservation_approve-01",
+      "reservation_approve-02",
+      "reservation_approve-03",
+      "reservation_approve-05",
+      "reservation_approve-06",
+      "reservation_reject-01",
+      "reservation_reject-02",
+      "reservation_reject-03",
+      "reservation_reject-05",
+      "trial_query-02",
+      "trial_query-03",
+      "trial_approve-01",
+      "trial_approve-02",
+      "trial_approve-03",
+      "trial_reject-02",
+      "trial_reject-03",
+      "trial_future-02",
+      "rag-02",
+      "rag-03"
+    ],
+    "realNotExecutedIDs": [
+      "course_query-04",
+      "course_query-07",
+      "course_query-10",
+      "campus_query-01",
+      "campus_query-04",
+      "missing_information-04",
+      "missing_information-07",
+      "reservation_approve-04",
+      "reservation_reject-04",
+      "trial_query-01",
+      "trial_query-04",
+      "trial_approve-04",
+      "trial_reject-01",
+      "trial_future-01",
+      "rag-01"
+    ],
+    "coverageUnit": "unique dataset case IDs attempted, including failures; executed does not mean passed; repeated runs are deduplicated and fixture is never real-model coverage"
+  },
+  "rag": {
+    "source": "E:\\dev\\zhikexing-agent-runtime\\experiments\\results\\2026-10-01\\rag-postgres",
+    "provider": "bailian",
+    "engine": "postgres",
+    "corpusChunks": 100,
+    "questions": 50,
+    "model": "text-embedding-v4",
+    "dimensions": 1024,
+    "cacheSha256": "3ca6665a41552b42e1355ee2c59b0269ab862f18b3e936337371e29029d7fe86",
+    "embeddingUsageTokens": 5848,
+    "embeddingCostCny": null,
+    "externalModelCallsDuringCompare": 0,
+    "repeats": 5,
+    "latencyScope": "PostgreSQL exact vector query / all candidate transfer + Python lexical / both for RRF; excludes embedding, generation, HTTP and authorization",
+    "semanticEvidence": true,
+    "metrics": {
+      "development": {
+        "dense": {
+          "queries": 20,
+          "macroRecallAt5": 1.0,
+          "MRRAt5": 1.0,
+          "allEvidenceAt5Rate": 1.0,
+          "retrievalP95Ms": 1.3701459993171738,
+          "queryEmbeddingP95Ms": 229.1784019998886
+        },
+        "lexical": {
+          "queries": 20,
+          "macroRecallAt5": 1.0,
+          "MRRAt5": 1.0,
+          "allEvidenceAt5Rate": 1.0,
+          "retrievalP95Ms": 1.3040699996054173,
+          "queryEmbeddingP95Ms": 229.1784019998886
+        },
+        "rrf": {
+          "queries": 20,
+          "macroRecallAt5": 1.0,
+          "MRRAt5": 1.0,
+          "allEvidenceAt5Rate": 1.0,
+          "retrievalP95Ms": 2.902690000155417,
+          "queryEmbeddingP95Ms": 229.1784019998886
+        }
+      },
+      "holdout": {
+        "dense": {
+          "queries": 30,
+          "macroRecallAt5": 1.0,
+          "MRRAt5": 1.0,
+          "allEvidenceAt5Rate": 1.0,
+          "retrievalP95Ms": 1.7776559998310404,
+          "queryEmbeddingP95Ms": 184.56341100045393
+        },
+        "lexical": {
+          "queries": 30,
+          "macroRecallAt5": 1.0,
+          "MRRAt5": 1.0,
+          "allEvidenceAt5Rate": 1.0,
+          "retrievalP95Ms": 1.6171529996427125,
+          "queryEmbeddingP95Ms": 184.56341100045393
+        },
+        "rrf": {
+          "queries": 30,
+          "macroRecallAt5": 1.0,
+          "MRRAt5": 1.0,
+          "allEvidenceAt5Rate": 1.0,
+          "retrievalP95Ms": 3.5030830003961455,
+          "queryEmbeddingP95Ms": 184.56341100045393
+        }
+      },
+      "all": {
+        "dense": {
+          "queries": 50,
+          "macroRecallAt5": 1.0,
+          "MRRAt5": 1.0,
+          "allEvidenceAt5Rate": 1.0,
+          "retrievalP95Ms": 1.6283800005112425,
+          "queryEmbeddingP95Ms": 229.1784019998886
+        },
+        "lexical": {
+          "queries": 50,
+          "macroRecallAt5": 1.0,
+          "MRRAt5": 1.0,
+          "allEvidenceAt5Rate": 1.0,
+          "retrievalP95Ms": 1.4876530003675725,
+          "queryEmbeddingP95Ms": 229.1784019998886
+        },
+        "rrf": {
+          "queries": 50,
+          "macroRecallAt5": 1.0,
+          "MRRAt5": 1.0,
+          "allEvidenceAt5Rate": 1.0,
+          "retrievalP95Ms": 3.1974630001059268,
+          "queryEmbeddingP95Ms": 229.1784019998886
+        }
+      }
+    },
+    "limitations": [
+      "synthetic initial correctness dataset",
+      "no ANN index or reranker",
+      "fixture hash vectors do not measure semantic model quality",
+      "not production full retrieval latency"
+    ],
+    "semanticMetricsUsable": true,
+    "evidenceScope": "real embedding retrieval on a frozen synthetic dataset; inspect latencyScope"
+  },
+  "resources": {
+    "cacheMeasurementWindows": {
+      "db": {
+        "zhikexing-benchmark-backend-1": {
+          "samples": 75,
+          "medianCpuPercent": 30.29,
+          "maxCpuPercent": 63.36,
+          "medianLogicalCores": 0.3029,
+          "maxObservedLogicalCores": 0.6335999999999999
+        },
+        "zhikexing-benchmark-mysql-1": {
+          "samples": 75,
+          "medianCpuPercent": 40.34,
+          "maxCpuPercent": 78.53,
+          "medianLogicalCores": 0.40340000000000004,
+          "maxObservedLogicalCores": 0.7853
+        },
+        "zhikexing-benchmark-redis-1": {
+          "samples": 75,
+          "medianCpuPercent": 5.92,
+          "maxCpuPercent": 11.66,
+          "medianLogicalCores": 0.0592,
+          "maxObservedLogicalCores": 0.1166
+        },
+        "zhikexing-benchmark-load-generator-1": {
+          "samples": 75,
+          "medianCpuPercent": 38.12,
+          "maxCpuPercent": 74.6,
+          "medianLogicalCores": 0.3812,
+          "maxObservedLogicalCores": 0.746
+        }
+      },
+      "redis": {
+        "zhikexing-benchmark-backend-1": {
+          "samples": 75,
+          "medianCpuPercent": 24.85,
+          "maxCpuPercent": 36.28,
+          "medianLogicalCores": 0.24850000000000003,
+          "maxObservedLogicalCores": 0.3628
+        },
+        "zhikexing-benchmark-mysql-1": {
+          "samples": 75,
+          "medianCpuPercent": 0.79,
+          "maxCpuPercent": 4.23,
+          "medianLogicalCores": 0.0079,
+          "maxObservedLogicalCores": 0.042300000000000004
+        },
+        "zhikexing-benchmark-redis-1": {
+          "samples": 75,
+          "medianCpuPercent": 7.5,
+          "maxCpuPercent": 9.24,
+          "medianLogicalCores": 0.075,
+          "maxObservedLogicalCores": 0.0924
+        },
+        "zhikexing-benchmark-load-generator-1": {
+          "samples": 75,
+          "medianCpuPercent": 38.15,
+          "maxCpuPercent": 47.4,
+          "medianLogicalCores": 0.3815,
+          "maxObservedLogicalCores": 0.474
+        }
+      },
+      "two-level": {
+        "zhikexing-benchmark-backend-1": {
+          "samples": 76,
+          "medianCpuPercent": 22.5,
+          "maxCpuPercent": 33.62,
+          "medianLogicalCores": 0.225,
+          "maxObservedLogicalCores": 0.3362
+        },
+        "zhikexing-benchmark-mysql-1": {
+          "samples": 76,
+          "medianCpuPercent": 0.79,
+          "maxCpuPercent": 3.89,
+          "medianLogicalCores": 0.0079,
+          "maxObservedLogicalCores": 0.038900000000000004
+        },
+        "zhikexing-benchmark-redis-1": {
+          "samples": 76,
+          "medianCpuPercent": 5.755,
+          "maxCpuPercent": 8.47,
+          "medianLogicalCores": 0.05755,
+          "maxObservedLogicalCores": 0.08470000000000001
+        },
+        "zhikexing-benchmark-load-generator-1": {
+          "samples": 76,
+          "medianCpuPercent": 36.879999999999995,
+          "maxCpuPercent": 46.45,
+          "medianLogicalCores": 0.36879999999999996,
+          "maxObservedLogicalCores": 0.4645
+        }
+      }
+    },
+    "cpuDefinition": "Docker CPU percent; 100% is one logical core, 400% is four cores",
+    "samplingScope": "sample median and observed maximum, not continuous peak or percent of CPU quota; bounded sampler intervals must fit a measurement window, host atUtc is completion-time approximation",
+    "diagnostics": {
+      "invalidJsonLines": 0,
+      "samplerFailureSamples": 7,
+      "invalidTimestampSamples": 0
+    },
+    "source": [
+      "experiments\\results\\2026-10-01\\container-resources.jsonl",
+      "experiments\\results\\2026-10-01\\trial-resources.jsonl",
+      "experiments\\results\\2026-10-01\\agent-resources.jsonl"
+    ]
+  }
+}

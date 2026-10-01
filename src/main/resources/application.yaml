@@ -53,7 +53,12 @@ spring:
 server:
   port: ${SERVER_PORT:8080}
 app:
+  trial:
+    recovery-batch-size: ${TRIAL_RECOVERY_BATCH_SIZE:30}
+    recovery-delay-ms: ${TRIAL_RECOVERY_DELAY_MS:1000}
   catalog-cache:
+    mode: ${APP_CATALOG_CACHE_MODE:two-level}
+    key-prefix: ${APP_CATALOG_CACHE_KEY_PREFIX:catalog:}
     local-ttl: ${CATALOG_LOCAL_TTL:10s}
     shared-ttl: ${CATALOG_SHARED_TTL:60s}
     max-entries: ${CATALOG_MAX_ENTRIES:1000}

@@ -53,7 +53,8 @@ class CatalogAuthorizationTest {
         var jdbc = mock(JdbcTemplate.class);
         var redisson = mock(RedissonClient.class);
         var cache = new CatalogCache(redis, redisson, new CatalogCacheProperties(), new SimpleMeterRegistry());
-        var catalog = new CourseCatalogService(jdbc, cache, JsonMapper.builder().build());
+        var catalog = new CourseCatalogService(jdbc, cache, JsonMapper.builder().build(),
+                new io.micrometer.core.instrument.simple.SimpleMeterRegistry());
         var mvc = MockMvcBuilders.standaloneSetup(new CourseCatalogController(catalog))
                 .addInterceptors(new RefreshTokenInterceptor(sessions), new LoginInterceptor())
                 .setControllerAdvice(new AgentErrorHandler()).build();

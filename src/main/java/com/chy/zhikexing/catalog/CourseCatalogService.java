@@ -2,6 +2,7 @@ package com.chy.zhikexing.catalog;
 
 import java.util.*;
 import java.util.function.Supplier;
+import io.micrometer.core.instrument.MeterRegistry;
 import org.springframework.http.HttpStatus;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
@@ -43,19 +44,21 @@ public class CourseCatalogService {
     private final JdbcTemplate jdbc;
     private final CatalogCache cache;
     private final ObjectMapper json;
+    private final MeterRegistry metrics;
 
-    public CourseCatalogService(JdbcTemplate jdbc, CatalogCache cache, ObjectMapper json) {
+    public CourseCatalogService(JdbcTemplate jdbc, CatalogCache cache, ObjectMapper json, MeterRegistry metrics) {
         this.jdbc = jdbc;
         this.cache = cache;
         this.json = json;
+        this.metrics = metrics;
     }
 
     public CoursePage page(Filter filter, int page, int pageSize) {
         if (page < 1 || pageSize < 1 || pageSize > 50) throw badRequest("页码必须大于 0，每页为 1 至 50 条");
         Supplier<CoursePage> query = () -> {
             var where = where(filter);
-            long total = jdbc.queryForObject("SELECT COUNT(*) FROM course" + where.sql(),
-                    Long.class, where.params().toArray());
+            long total = sql("page_count", () -> jdbc.queryForObject("SELECT COUNT(*) FROM course" + where.sql(),
+                    Long.class, where.params().toArray()));
             return new CoursePage(queryCourses(filter, pageSize, ((long) page - 1) * pageSize),
                     total, page, pageSize);
         };
@@ -67,8 +70,8 @@ public class CourseCatalogService {
     public Course course(long id) {
         if (id <= 0) throw badRequest("课程编号必须大于 0");
         Course course = cached("course:" + id, new TypeReference<Course>() {}, () ->
-                jdbc.query("SELECT " + COLUMNS + " FROM course WHERE id=?", COURSE_ROW, id)
-                        .stream().findFirst().orElse(null));
+                sql("course", () -> jdbc.query("SELECT " + COLUMNS + " FROM course WHERE id=?", COURSE_ROW, id)
+                        .stream().findFirst().orElse(null)));
         if (course == null) throw new ResponseStatusException(HttpStatus.NOT_FOUND, "课程不存在");
         return course;
     }
@@ -83,16 +86,16 @@ public class CourseCatalogService {
     }
 
     public List<CourseOption> courseOptions() {
-        return cached("courses:options", new TypeReference<>() {}, () -> jdbc.query(
+        return cached("courses:options", new TypeReference<>() {}, () -> sql("options", () -> jdbc.query(
                 "SELECT id,name FROM course ORDER BY id LIMIT 500",
-                (r, n) -> new CourseOption(r.getString("id"), r.getString("name"))));
+                (r, n) -> new CourseOption(r.getString("id"), r.getString("name")))));
     }
 
     public List<Campus> campuses() {
-        return cached("campuses", new TypeReference<>() {}, () -> jdbc.query(
+        return cached("campuses", new TypeReference<>() {}, () -> sql("campuses", () -> jdbc.query(
                 "SELECT id,name,city FROM school ORDER BY id LIMIT 200",
                 (r, n) -> new Campus(r.getString("id"), r.getString("name"),
-                        Objects.toString(r.getString("city"), ""))));
+                        Objects.toString(r.getString("city"), "")))));
     }
 
     private List<Course> queryCourses(Filter filter, int limit, long offset) {
@@ -102,8 +105,13 @@ public class CourseCatalogService {
         params.add(offset);
         String order = filter.sortBy() + (filter.ascending() ? " ASC" : " DESC")
                 + (filter.sortBy().equals("id") ? "" : ",id ASC");
-        return jdbc.query("SELECT " + COLUMNS + " FROM course" + where.sql()
-                + " ORDER BY " + order + " LIMIT ? OFFSET ?", COURSE_ROW, params.toArray());
+        return sql("courses", () -> jdbc.query("SELECT " + COLUMNS + " FROM course" + where.sql()
+                + " ORDER BY " + order + " LIMIT ? OFFSET ?", COURSE_ROW, params.toArray()));
+    }
+
+    private <T> T sql(String query, Supplier<T> statement) {
+        metrics.counter("catalog.sql.queries", "query", query).increment();
+        return statement.get();
     }
 
     private record Where(String sql, List<Object> params) {}

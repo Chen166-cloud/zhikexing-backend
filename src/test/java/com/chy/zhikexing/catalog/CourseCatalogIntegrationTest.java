@@ -79,7 +79,8 @@ class CourseCatalogIntegrationTest {
                 return super.get(scoped, loader);
             }
         };
-        catalog = new CourseCatalogService(jdbc, cache, json);
+        catalog = new CourseCatalogService(jdbc, cache, json,
+                new io.micrometer.core.instrument.simple.SimpleMeterRegistry());
     }
 
     @AfterEach

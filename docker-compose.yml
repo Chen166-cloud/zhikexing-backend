@@ -344,9 +344,6 @@ services:
       ROCKETMQ_NAME_SERVER: rocketmq-nameserver:9876
       AGENT_RUNTIME_URL: http://agent-runtime:8000
       AGENT_INTERNAL_TOKEN: ${AGENT_INTERNAL_TOKEN}
-      DASHSCOPE_API_KEY: ${DASHSCOPE_API_KEY:-}
-      AGENT_CHAT_MODEL: qwen3.7-flash
-      LEGACY_AI_ENABLED: "false"
       CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:5173,http://127.0.0.1:5173,http://localhost:5176,http://127.0.0.1:5176,http://localhost:8088,http://127.0.0.1:8088}
       OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4318
       JAVA_TOOL_OPTIONS: -XX:MaxRAMPercentage=65 -Dfile.encoding=UTF-8

@@ -1,13 +1,11 @@
 package com.chy.zhikexing.controller;
 
 import com.chy.zhikexing.entity.vo.Result;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-/** 旧入口停用时明确告知迁移位置，避免显示空白的 404 页面。 */
+/** 保留旧入口的迁移提示，避免历史链接变成没有说明的 404 页面。 */
 @RestController
-@ConditionalOnProperty(name="app.legacy-ai-enabled",havingValue="false",matchIfMissing=true)
 public class LegacyMigrationController {
     @RequestMapping("/ai/**")
     public ResponseEntity<Result> migrated() {

@@ -68,7 +68,8 @@ flowchart LR
 
 ## 技术与工程约束
 
-- Java 21、Spring Boot 4.1.1、Spring AI 2.0.1、MyBatis-Plus 3.5.17、Flyway；Redis 登录态、BCrypt 密码渐进升级。[登录保护](docs/modules/登录保护.md)提供校验前限流、认证并发上限、失败冷却和每账号会话数量限制。
+- Java 21、Spring Boot 4.1.1、MyBatis-Plus 3.5.17、Flyway；Redis 登录态、BCrypt 密码渐进升级。[登录保护](docs/modules/登录保护.md)提供校验前限流、认证并发上限、失败冷却和每账号会话数量限制。
+- 旧 Spring AI 聊天、客服、游戏和 PDF 实现及其依赖已移除，模型调用与知识库由独立 Python Runtime 负责，Java 无需模型 Key。旧 `/ai/**` 保留 HTTP 410 迁移提示；历史 Flyway 迁移及旧数据表保留，已有数据库可继续升级。
 - Caffeine + Redis 缓存课程默认列表、固定目录和详情；Redisson 按键协调跨实例回源。网页、Agent 工具与试听选项共用课程查询服务，筛选搜索直接访问 MySQL，详见[课程目录与两级缓存](docs/modules/课程目录与两级缓存.md)。
 - MySQL 业务表的新写入主键采用应用生成的雪花 ID，默认单实例节点号 0；多 Java 写入实例须配置互不冲突的 `SNOWFLAKE_NODE_ID`（0–1022，1023 留给迁移与演示数据）。Flyway V1–V7 管理业务结构，聊天记录和 PDF 文件表名分别为 `zhikexing_chat_record`、`zhikexing_pdf_file`；应用表不设物理外键，服务层校验逻辑关联，数据库唯一键与事务约束保留。
 - Python 3.13、FastAPI、LangGraph、PostgreSQL checkpoint、pgvector；通过 HTTP 幂等接收运行命令。

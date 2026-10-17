@@ -5,15 +5,12 @@ import static org.mockito.Mockito.*;
 
 import com.chy.zhikexing.agent.AgentBusinessService;
 import com.chy.zhikexing.agent.AgentJson;
-import com.chy.zhikexing.config.SnowflakeChatMemoryConfiguration;
 import com.chy.zhikexing.trial.TrialInventory;
 import com.chy.zhikexing.trial.TrialService;
 
 import org.flywaydb.core.Flyway;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
-import org.springframework.ai.chat.messages.AssistantMessage;
-import org.springframework.ai.chat.messages.UserMessage;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.datasource.DataSourceTransactionManager;
 import org.springframework.jdbc.datasource.DriverManagerDataSource;
@@ -22,39 +19,12 @@ import org.springframework.transaction.support.TransactionTemplate;
 import tools.jackson.databind.json.JsonMapper;
 
 import java.time.Instant;
-import java.util.List;
 import java.util.Map;
 
 @EnabledIfEnvironmentVariable(
         named = "SNOWFLAKE_TEST_MYSQL_URL",
         matches = ".*zhikexing_snowflake_flyway_test.*")
 class SnowflakeBusinessIntegrationTest {
-    @Test
-    void chatMemoryWriterPersistsAndReadsSnowflakeIds() {
-        var dataSource =
-                new DriverManagerDataSource(
-                        System.getenv("SNOWFLAKE_TEST_MYSQL_URL"), "root", "");
-        Flyway.configure().dataSource(dataSource).load().migrate();
-        var jdbc = new JdbcTemplate(dataSource);
-        var manager = new DataSourceTransactionManager(dataSource);
-        var repository =
-                new SnowflakeChatMemoryConfiguration()
-                        .snowflakeChatMemoryRepository(
-                                dataSource, jdbc, new TransactionTemplate(manager), new SnowflakeIds(890));
-        String conversation = "snowflake-memory-" + System.nanoTime();
-        repository.saveAll(
-                conversation, List.of(new UserMessage("试听课介绍"), new AssistantMessage("课程已找到")));
-        var rows = jdbc.queryForList(
-                "SELECT id,content FROM spring_ai_chat_memory WHERE conversation_id=? ORDER BY sequence_id",
-                conversation);
-        assertEquals(2, rows.size());
-        assertTrue(((Number) rows.get(0).get("id")).longValue() > (1L << 53));
-        assertEquals("试听课介绍", rows.get(0).get("content"));
-        assertEquals(2, repository.findByConversationId(conversation).size());
-        repository.deleteByConversationId(conversation);
-        assertTrue(repository.findByConversationId(conversation).isEmpty());
-    }
-
     @Test
     void campaignClaimAndConfirmedOrderUseSnowflakeReceipts() {
         var dataSource =

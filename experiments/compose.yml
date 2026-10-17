@@ -14,7 +14,6 @@ x-backend: &backend
     DB_PASSWORD: benchmark-only
     REDIS_HOST: redis
     REDIS_PORT: 6379
-    DASHSCOPE_API_KEY: fixture-no-external-model
     AGENT_INTERNAL_TOKEN: benchmark-internal-only
     AGENT_RUNTIME_URL: http://agent-experiment:28400
     ROCKETMQ_ENABLED: "true"
